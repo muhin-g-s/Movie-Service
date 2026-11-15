@@ -14,3 +14,9 @@ hooks:
       prompt: Выполнить синхронизацию документации после поправки конституции
       optional: false
       enabled: true
+    - extension: platform
+      command: audit
+      description: Смысловой аудит согласованности харнеса после поправки конституции
+      prompt: Запустить смысловой аудит харнеса
+      optional: true
+      enabled: true

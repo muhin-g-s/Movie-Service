@@ -1,0 +1,11 @@
+--- core
++++ override
+@@ -2,6 +2,8 @@
+ 
+ **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+ 
++**Constitution version**: [X.Y.Z, copy from the footer of the project constitution when the plan is written]
++
+ **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+ 
+ **Note**: This template is filled in by the `/speckit-plan` command; its definition describes the execution workflow.

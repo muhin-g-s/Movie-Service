@@ -84,6 +84,10 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/capture-reminder.py\" start"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/tools/docs-lint.py\" --session"
           }
         ]
       }
