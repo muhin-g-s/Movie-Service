@@ -1,4 +1,4 @@
-# Хуки Spec Kit. Описание механизма: docs/development/README.md
+# Хуки Spec Kit. Описание механизма: docs/harness/reference.md
 hooks:
   after_implement:
     - extension: platform

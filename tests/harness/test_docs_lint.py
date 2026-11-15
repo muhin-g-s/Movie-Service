@@ -159,13 +159,25 @@ class TestDocumentChecks(LintCase):
         self.repo.write("docs/architecture/extra.md", self.repo.read("docs/operations/README.md"))
         self.detected("нет в карте источников истины")
 
+    def test_adr_files_do_not_need_their_own_map_row(self):
+        text = self.repo.read("docs/decisions/0001-spec-kit-and-omc-roles.md").replace("ADR 0001", "ADR 0007")
+        self.repo.write("docs/decisions/0007-extra.md", text)
+        self.repo.append("docs/decisions/README.md", "\n[0007](0007-extra.md)\n")
+        self.clean()
+
+    @covers("check_adr_index")
+    def test_adr_missing_from_index(self):
+        text = self.repo.read("docs/decisions/0001-spec-kit-and-omc-roles.md")
+        self.repo.write("docs/decisions/0007-extra.md", text)
+        self.detected("ADR нет в указателе")
+
 
 class TestHarnessWiring(LintCase):
     @covers("check_harness_documented")
     def test_new_tool_missing_from_diagram_and_guide(self):
         self.repo.write("tools/new-tool.py", "#!/usr/bin/env python3\n")
         result = self.detected("не показан на схеме связей")
-        self.assertIn("не описан в руководстве", result.stdout)
+        self.assertIn("не описан в справочнике", result.stdout)
 
     def test_new_git_hook_missing_from_diagram(self):
         self.repo.write(".githooks/pre-push", "x\n")

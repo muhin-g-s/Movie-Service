@@ -12,8 +12,9 @@
 | Раздел | О чем | Статус |
 |---|---|---|
 | [architecture](architecture/README.md) | устройство системы | частично, ждет MVP |
-| [decisions](decisions/README.md) | ADR и реестр отложенных решений | реестр ведется, ADR появятся позже |
-| [development](development/README.md) | проверка документации, автоматизация, затем окружение | частично, остальное не определено |
+| [harness](harness/README.md) | харнес: границы зон, возможности, инфраструктура, справочник, гейты | описан |
+| [decisions](decisions/README.md) | ADR и реестр отложенных решений | шесть ADR, реестр ведется |
+| [development](development/README.md) | разработка сервиса: окружение, команды, тестирование | не определено |
 | [operations](operations/README.md) | конфигурация, деплой, эксплуатация | не определено |
 
 ## Карта источников истины
@@ -28,111 +29,24 @@
 | критерии проверки кода | [code-review.md](../code-review.md) |
 | контракты (OpenAPI, AsyncAPI, JSON Schema) и типы | пакет контрактов, структура не определена, правило в принципе III конституции |
 | устройство системы | [architecture](architecture/README.md) |
-| причины принятых решений | [decisions](decisions/README.md) |
+| причины принятых решений | [указатель ADR](decisions/README.md#указатель-adr) |
 | отложенные решения | [реестр](decisions/README.md#отложенные-решения) |
 | окружение разработки, команды | [development](development/README.md) |
 | конфигурация окружений, деплой, миграции, мониторинг | [operations](operations/README.md) |
 | назначение проекта, вход | [README.md](../README.md) |
 | правила ведения документации | этот файл |
 | язык текстов и кода, переходный режим, разрешенные AI-зависимости | [конституция](../.specify/memory/constitution.md) |
-| проверка документации, хуки, настройки Claude Code | [development](development/README.md#автоматизация-ai-среды), сами файлы: `.claude/settings.json`, `.specify/extensions.yml`, `.githooks/`, `tools/` |
-| шаблоны Spec Kit, измененные проектом | `.specify/templates/overrides/`, описание в [development](development/README.md#автоматизация-ai-среды) |
-| тесты харнеса и сценарии поведения агента | `tests/harness/`, `evals/cases/`, описание в [development](development/README.md#тесты-харнеса) |
-| скиллы проекта | `.claude/skills/`, кроме `speckit-*`, их ставит интеграция |
+| проверка документации, хуки, настройки Claude Code | [reference.md](harness/reference.md#автоматизация-ai-среды), сами файлы: `.claude/settings.json`, `.specify/extensions.yml`, `.githooks/`, `tools/` |
+| шаблоны Spec Kit, измененные проектом | `.specify/templates/overrides/`, описание в [reference.md](harness/reference.md#автоматизация-ai-среды) |
+| тесты харнеса и сценарии поведения агента | `tests/harness/`, `evals/cases/`, описание в [reference.md](harness/reference.md#тесты-харнеса) |
+| скиллы проекта | `.claude/skills/`, кроме `speckit-*`, их ставит интеграция, описание в [reference.md](harness/reference.md#скиллы-проекта) |
+| границы харнеса и продукта, состав зон, правила границы | [harness/README.md](harness/README.md#две-зоны-репозитория) |
+| пул возможностей: что дают Spec Kit, OMC и обвязки проекта | [capabilities.md](harness/capabilities.md) |
+| компоненты харнеса, зависимости, схема связей, потоки, состояние, точки отказа | [infrastructure.md](harness/infrastructure.md) |
+| справочник скиллов, скриптов, хуков, формат сценариев | [reference.md](harness/reference.md) |
+| гейты качества и пример запуска в CI | [quality-gates.md](harness/quality-gates.md) |
 | рабочее состояние агентов | локальный каталог `.omc/`, игнорируется git, источником истины не является |
 | расшифровки сессий и память Claude | вне репозитория, локальный кэш, источником истины не являются, повторы в них ищет `tools/harvest.py` |
-
-## Схема связей
-
-```mermaid
-flowchart TD
-    C["constitution.md<br/>принципы и стек"]
-    A["AGENTS.md<br/>инструкции агентам"]
-    CL["CLAUDE.md<br/>вход для Claude Code"]
-    CR["code-review.md<br/>критерии проверки"]
-    S["specs/NNN-feature<br/>артефакты фичи"]
-    R["README.md<br/>вход в проект"]
-    D["docs/README.md<br/>карта и навигация"]
-    AR["docs/architecture"]
-    DV["docs/development"]
-    OP["docs/operations"]
-    DC["docs/decisions<br/>ADR и реестр"]
-    SPK[".claude/skills/speckit-*<br/>команды Spec Kit"]
-    OV[".specify/templates/overrides/tasks-template.md<br/>.specify/templates/overrides/tasks-template.patch<br/>.specify/templates/overrides/plan-template.md<br/>.specify/templates/overrides/plan-template.patch<br/>тесты обязательны, версия конституции в плане"]
-    AUD[".claude/skills/audit<br/>смысловой аудит"]
-    EXT[".specify/extensions.yml<br/>хуки Spec Kit"]
-    SYNC[".claude/skills/docs-sync<br/>синхронизация документации"]
-    LINT["tools/docs-lint.py<br/>проверка документации"]
-    GUARD["tools/guard-constitution.py<br/>подтверждение записи"]
-    SET[".claude/settings.json<br/>плагины, запреты, хуки"]
-    GIT[".githooks/pre-commit<br/>проверка перед коммитом"]
-    OMC[".omc/<br/>локальное состояние OMC"]
-    CAP[".claude/skills/capture<br/>запись решения владельцу"]
-    HAR[".claude/skills/harvest<br/>поиск повторяющегося контекста"]
-    COLD[".claude/skills/cold-start<br/>проверка с чистого листа"]
-    HARV["tools/harvest.py<br/>анализ сессий"]
-    REM["tools/capture-reminder.py<br/>напоминания о записи"]
-    TRN["расшифровки сессий и память Claude<br/>вне репозитория"]
-    TST["tests/harness<br/>тесты харнеса"]
-    EV["evals/cases<br/>сценарии поведения"]
-    HE["tools/harness-eval.py<br/>запуск сценариев"]
-    HSK[".claude/skills/harness-eval<br/>ручной прогон сценариев"]
-
-    C ==> A ==> CL
-    C ==> CR
-    C ==> S
-    C ==> AR
-    C ==> DV
-    C ==> OP
-    C ==> OV
-
-    R -.-> D
-    R -.-> C
-    D -.-> AR
-    D -.-> DV
-    D -.-> OP
-    D -.-> DC
-    A -.-> D
-    A -.-> CR
-    A -.-> S
-    A -.-> DC
-    CL -.-> OMC
-
-    SPK -->|читает хуки| EXT
-    SPK -->|берет шаблон| OV
-    EXT -->|после implement и constitution| SYNC
-    SYNC -->|запускает| LINT
-    SET -->|хук после правки| LINT
-    SET -->|хук перед командой| GUARD
-    GIT -->|запускает| LINT
-    GUARD -->|защищает| C
-    LINT -->|проверяет документы и версию| C
-    LINT -->|проверяет| SET
-    LINT -->|ловит дрейф шаблонов| OV
-    SET -->|при старте сессии| LINT
-    EXT -->|после constitution предлагает| AUD
-    AUD -->|сверяет файлы с| C
-    SET -->|хуки Stop, SessionEnd, PreCompact, SessionStart| REM
-    REM -->|напоминает запустить| CAP
-    REM -->|напоминает запустить| HAR
-    HAR -->|запускает| HARV
-    HARV -->|читает| TRN
-    HAR -->|передает кандидатов| CAP
-    CAP -->|после записи запускает| LINT
-    COLD -->|проверяет, что факты находятся| A
-    HSK -->|запускает| HE
-    HE -->|гоняет| EV
-    HE -->|в чистой копии проверяет харнес| A
-    TST -->|проверяет| LINT
-    TST -->|проверяет| REM
-    LINT -->|требует тест для каждого файла харнеса| TST
-```
-
-- Жирная стрелка `A ==> B`: B опирается на A и не может ему противоречить.
-- Пунктирная стрелка `A -.-> B`: A указывает на B как на источник истины и не копирует его содержимое.
-- Подписанная стрелка `A -->|действие| B`: A выполняет действие над B или запускает его.
-- Каждый файл харнеса (настройки, хуки, скрипты, скиллы проекта, переопределения шаблонов) должен быть показан на схеме, это проверяет [проверка документации](development/README.md#проверка-документации).
-- Обратные навигационные ссылки из конституции на `AGENTS.md`, `code-review.md` и `docs/` зависимость не меняют.
 
 ## Механика ведения документов
 
@@ -141,7 +55,7 @@ flowchart TD
 - **Отложенные темы.** Раздел с неопределенным содержимым содержит ссылку на [реестр](decisions/README.md#отложенные-решения) и формулировку "не определено". Пустые заглушки без пометки не создаются.
 - **Ссылки.** Только относительные, на файл-владелец, с якорем на раздел, если нужен конкретный раздел. Вместо "см. выше" всегда явная ссылка.
 - **Форматирование.** Простой Markdown, диаграммы в mermaid, без ASCII-графики. Язык задан в [разделе процесса конституции](../.specify/memory/constitution.md#процесс-разработки-и-контроль-качества).
-- **Типографика.** Без буквы е с двумя точками, длинного тире, угловых кавычек, а также стрелки и многоточия в виде одного символа. Вместо тире дефис. Проверяется [проверкой документации](development/README.md#проверка-документации).
+- **Типографика.** Без буквы е с двумя точками, длинного тире, угловых кавычек, а также стрелки и многоточия в виде одного символа. Вместо тире дефис. Проверяется [проверкой документации](harness/reference.md#проверка-документации).
 - **Новый факт.** Сначала определите владельца и добавьте строку в карту, потом пишите факт.
 
-Механизмы автообновления и проверки описаны в [development](development/README.md#автоматизация-ai-среды).
+Механизмы автообновления и проверки описаны в [справочнике харнеса](harness/reference.md#автоматизация-ai-среды).

@@ -21,7 +21,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CONSTITUTION = ".specify/memory/constitution.md"
 MAP_FILE = "docs/README.md"
-DEV_FILE = "docs/development/README.md"
+REFERENCE_FILE = "docs/harness/reference.md"
+INFRA_FILE = "docs/harness/infrastructure.md"
+ADR_GLOB = "docs/decisions/[0-9][0-9][0-9][0-9]-*.md"
 REGISTRY = "docs/decisions/README.md"
 REGISTRY_ANCHOR = "отложенные-решения"
 TEMPLATES = ".specify/templates"
@@ -213,15 +215,15 @@ def harness_files():
 
 
 def check_harness_documented(errors):
-    diagram = re.search(r"```mermaid(.*?)```", read(MAP_FILE), re.S)
+    diagram = re.search(r"```mermaid(.*?)```", read(INFRA_FILE), re.S)
     if not diagram:
-        errors.append((MAP_FILE, "нет схемы связей в блоке mermaid"))
-    dev = read(DEV_FILE)
+        errors.append((INFRA_FILE, "нет схемы связей в блоке mermaid"))
+    reference = read(REFERENCE_FILE)
     for rel in harness_files():
         if diagram and rel not in diagram.group(1):
-            errors.append((MAP_FILE, f"файл харнеса {rel} не показан на схеме связей"))
-        if rel not in dev:
-            errors.append((DEV_FILE, f"файл харнеса {rel} не описан в руководстве"))
+            errors.append((INFRA_FILE, f"файл харнеса {rel} не показан на схеме связей"))
+        if rel not in reference:
+            errors.append((REFERENCE_FILE, f"файл харнеса {rel} не описан в справочнике"))
 
 
 def check_wiring(errors):
@@ -273,10 +275,22 @@ def check_test_coverage(errors):
             errors.append((COVERAGE, f"запись о несуществующем файле харнеса {rel}"))
 
 
+def is_adr(rel):
+    return bool(re.fullmatch(r"docs/decisions/\d{4}-.+\.md", rel))
+
+
+def check_adr_index(errors):
+    indexed = {t for _, t, _ in links(REGISTRY)}
+    for path in sorted(ROOT.glob(ADR_GLOB)):
+        rel = str(path.relative_to(ROOT))
+        if rel not in indexed:
+            errors.append((rel, f"ADR нет в указателе {REGISTRY}"))
+
+
 def check_map(files, errors):
     mapped = {t for _, t, _ in links(MAP_FILE)}
     for rel in files:
-        if rel == MAP_FILE or rel.startswith(SKILLS_DIR + "/"):
+        if rel == MAP_FILE or rel.startswith(SKILLS_DIR + "/") or is_adr(rel):
             continue
         if rel not in mapped:
             errors.append((rel, "файла нет в карте источников истины docs/README.md"))
@@ -404,8 +418,11 @@ def run_checks(staged):
         check_backtick_paths(rel, errors)
         if valid:
             check_principle_refs(rel, valid, errors)
-    if (ROOT / MAP_FILE).exists() and (ROOT / DEV_FILE).exists():
+    if (ROOT / MAP_FILE).exists():
         check_map(files, errors)
+    if (ROOT / REGISTRY).exists():
+        check_adr_index(errors)
+    if (ROOT / INFRA_FILE).exists() and (ROOT / REFERENCE_FILE).exists():
         check_harness_documented(errors)
     if (ROOT / CONSTITUTION).exists():
         check_constitution(errors)

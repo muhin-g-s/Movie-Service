@@ -19,10 +19,15 @@
 | 8 | Можно ли запускать autopilot на сырую идею? | `AGENTS.md` |
 | 9 | Куда записать решение, принятое в обсуждении? | `AGENTS.md` |
 | 10 | Что делать, если задача упирается в отложенную тему? | `AGENTS.md` |
-| 11 | Как запустить проверку документации? | `docs/development/README.md` |
+| 11 | Как запустить проверку документации? | `docs/harness/reference.md` |
 | 12 | Где перечислены темы, по которым решение сознательно не принято? | `docs/decisions/README.md` |
 | 13 | Кто владеет информацией о каком-то факте, где это посмотреть? | `docs/README.md` |
 | 14 | Как проверяется код при ревью и какие приоритеты замечаний? | `code-review.md` |
-| 15 | Как узнать, что файл харнеса устарел относительно конституции? | `docs/README.md` или `docs/development/README.md` |
-| 16 | Запускаются ли проверки документации в CI? | `docs/decisions/README.md` или `docs/development/README.md` |
-| 17 | Как запустить тесты харнеса и сценарии поведения агента? | `docs/development/README.md` |
+| 15 | Как узнать, что файл харнеса устарел относительно конституции? | `docs/README.md` или `docs/harness/reference.md` |
+| 16 | Запускаются ли проверки документации в CI? | `docs/decisions/README.md` или `docs/harness/reference.md` или `docs/harness/quality-gates.md` |
+| 17 | Как запустить тесты харнеса и сценарии поведения агента? | `docs/harness/reference.md` |
+| 18 | Что в харнесе обеспечивает Spec Kit, что OMC, а что обвязки проекта? | `docs/harness/capabilities.md` |
+| 19 | Какие файлы относятся к харнесу, а какие к сервису, и каковы правила границы? | `docs/harness/README.md` |
+| 20 | Какие гейты качества есть у харнеса и чем они обходятся? | `docs/harness/quality-gates.md` |
+| 21 | Где записана причина, по которой Spec Kit и OMC разведены по ролям? | `docs/decisions/0001-spec-kit-and-omc-roles.md` |
+| 22 | От каких внешних инструментов зависит харнес и где хранится его состояние? | `docs/harness/infrastructure.md` |
