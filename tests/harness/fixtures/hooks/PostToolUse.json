@@ -1,0 +1,24 @@
+{
+  "session_id": "00000000-0000-0000-0000-000000000000",
+  "transcript_path": "__ROOT__/transcript.jsonl",
+  "cwd": "__ROOT__",
+  "prompt_id": "00000000-0000-0000-0000-000000000000",
+  "permission_mode": "auto",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "__ROOT__/README.md",
+    "content": "text"
+  },
+  "tool_response": {
+    "type": "update",
+    "filePath": "__ROOT__/README.md",
+    "userModified": false
+  },
+  "tool_use_id": "toolu_fixture",
+  "duration_ms": 1,
+  "_source": "захвачено в Claude Code 2.1.286, значения очищены"
+}

@@ -1,0 +1,18 @@
+{
+  "session_id": "00000000-0000-0000-0000-000000000000",
+  "transcript_path": "__ROOT__/transcript.jsonl",
+  "cwd": "__ROOT__",
+  "prompt_id": "00000000-0000-0000-0000-000000000000",
+  "permission_mode": "auto",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "git status --short",
+    "description": "Show working tree status"
+  },
+  "tool_use_id": "toolu_fixture",
+  "_source": "захвачено в Claude Code 2.1.286, значения очищены"
+}

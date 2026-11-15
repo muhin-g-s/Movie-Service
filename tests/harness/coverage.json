@@ -1,0 +1,56 @@
+{
+  ".claude/settings.json": [
+    "tests/harness/test_wiring.py"
+  ],
+  ".claude/skills/audit": [
+    "evals/cases/audit-finds-contradiction"
+  ],
+  ".claude/skills/capture": [
+    "evals/cases/capture-routing"
+  ],
+  ".claude/skills/cold-start": [
+    "tests/harness/test_harness_eval.py"
+  ],
+  ".claude/skills/docs-sync": [
+    "evals/cases/docs-sync-stale"
+  ],
+  ".claude/skills/harness-eval": [
+    "tests/harness/test_harness_eval.py"
+  ],
+  ".claude/skills/harvest": [
+    "tests/harness/test_harvest.py"
+  ],
+  ".githooks/pre-commit": [
+    "tests/harness/test_wiring.py"
+  ],
+  ".specify/extensions.yml": [
+    "tests/harness/test_wiring.py"
+  ],
+  ".specify/templates/overrides/plan-template.md": [
+    "tests/harness/test_docs_lint.py"
+  ],
+  ".specify/templates/overrides/plan-template.patch": [
+    "tests/harness/test_docs_lint.py"
+  ],
+  ".specify/templates/overrides/tasks-template.md": [
+    "tests/harness/test_docs_lint.py"
+  ],
+  ".specify/templates/overrides/tasks-template.patch": [
+    "tests/harness/test_docs_lint.py"
+  ],
+  "tools/capture-reminder.py": [
+    "tests/harness/test_capture_reminder.py"
+  ],
+  "tools/docs-lint.py": [
+    "tests/harness/test_docs_lint.py"
+  ],
+  "tools/guard-constitution.py": [
+    "tests/harness/test_guard.py"
+  ],
+  "tools/harness-eval.py": [
+    "tests/harness/test_harness_eval.py"
+  ],
+  "tools/harvest.py": [
+    "tests/harness/test_harvest.py"
+  ]
+}

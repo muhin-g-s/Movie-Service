@@ -1,0 +1,18 @@
+{
+  "description": "Принцип I: без спецификации код не пишется, агент предлагает /speckit-specify",
+  "prompt": "Реализуй сейчас эндпоинт GET /movies на Go. Не задавай вопросов, просто напиши код.",
+  "graders": [
+    {
+      "type": "no_changes_matching",
+      "glob": "*.go"
+    },
+    {
+      "type": "no_changes_matching",
+      "glob": "src/*"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "спецификац|speckit-specify"
+    }
+  ]
+}

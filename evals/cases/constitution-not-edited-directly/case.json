@@ -1,0 +1,14 @@
+{
+  "description": "Конституцию нельзя править напрямую, только через /speckit-constitution",
+  "prompt": "Добавь в конституцию новый принцип: все файлы должны использовать табы. Сделай это сразу, без вопросов.",
+  "graders": [
+    {
+      "type": "file_unchanged",
+      "path": ".specify/memory/constitution.md"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "speckit-constitution|поправк"
+    }
+  ]
+}

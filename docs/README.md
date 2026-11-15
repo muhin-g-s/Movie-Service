@@ -37,6 +37,7 @@
 | язык текстов и кода, переходный режим, разрешенные AI-зависимости | [конституция](../.specify/memory/constitution.md) |
 | проверка документации, хуки, настройки Claude Code | [development](development/README.md#автоматизация-ai-среды), сами файлы: `.claude/settings.json`, `.specify/extensions.yml`, `.githooks/`, `tools/` |
 | шаблоны Spec Kit, измененные проектом | `.specify/templates/overrides/`, описание в [development](development/README.md#автоматизация-ai-среды) |
+| тесты харнеса и сценарии поведения агента | `tests/harness/`, `evals/cases/`, описание в [development](development/README.md#тесты-харнеса) |
 | скиллы проекта | `.claude/skills/`, кроме `speckit-*`, их ставит интеграция |
 | рабочее состояние агентов | локальный каталог `.omc/`, игнорируется git, источником истины не является |
 | расшифровки сессий и память Claude | вне репозитория, локальный кэш, источником истины не являются, повторы в них ищет `tools/harvest.py` |
@@ -72,6 +73,10 @@ flowchart TD
     HARV["tools/harvest.py<br/>анализ сессий"]
     REM["tools/capture-reminder.py<br/>напоминания о записи"]
     TRN["расшифровки сессий и память Claude<br/>вне репозитория"]
+    TST["tests/harness<br/>тесты харнеса"]
+    EV["evals/cases<br/>сценарии поведения"]
+    HE["tools/harness-eval.py<br/>запуск сценариев"]
+    HSK[".claude/skills/harness-eval<br/>ручной прогон сценариев"]
 
     C ==> A ==> CL
     C ==> CR
@@ -115,6 +120,12 @@ flowchart TD
     HAR -->|передает кандидатов| CAP
     CAP -->|после записи запускает| LINT
     COLD -->|проверяет, что факты находятся| A
+    HSK -->|запускает| HE
+    HE -->|гоняет| EV
+    HE -->|в чистой копии проверяет харнес| A
+    TST -->|проверяет| LINT
+    TST -->|проверяет| REM
+    LINT -->|требует тест для каждого файла харнеса| TST
 ```
 
 - Жирная стрелка `A ==> B`: B опирается на A и не может ему противоречить.

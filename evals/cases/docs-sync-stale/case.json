@@ -1,0 +1,22 @@
+{
+  "slow": true,
+  "description": "После минорной поправки конституции docs-sync находит устаревшие метки и называет способ их обновить",
+  "setup": [
+    {
+      "type": "bump_constitution",
+      "part": "minor"
+    }
+  ],
+  "prompt": "Конституция получила новую минорную версию. Используй скилл docs-sync и скажи, что нужно сделать с документами.",
+  "graders": [
+    {
+      "type": "tool_used",
+      "name": "Skill",
+      "input_regex": "docs-sync"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "метк|stamp|устарел"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "description": "Плагины пользователя отключены: в списках скиллов, плагинов и агентов их нет",
+  "prompt": "Ответь одним словом: ok.",
+  "graders": [
+    {
+      "type": "init_lacks",
+      "field": "plugins",
+      "pattern": "01tech-plugins|betting-qa|claude-plugins-official"
+    },
+    {
+      "type": "init_lacks",
+      "field": "skills",
+      "pattern": "^(01-|qa-core|qa-testing|requirements-quality|qa-databases|figma:|chrome-devtools)"
+    },
+    {
+      "type": "init_lacks",
+      "field": "agents",
+      "pattern": "^(01-dev-pipeline|qa-core)"
+    }
+  ]
+}

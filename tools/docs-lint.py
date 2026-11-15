@@ -30,6 +30,7 @@ EXTENSIONS = ".specify/extensions.yml"
 OVERRIDE_TASKS = ".specify/templates/overrides/tasks-template.md"
 SETTINGS = ".claude/settings.json"
 SKILLS_DIR = ".claude/skills"
+COVERAGE = "tests/harness/coverage.json"
 # длинное и среднее тире, ё, Ё, угловые кавычки, стрелка, многоточие одним символом
 FORBIDDEN = "—–ёЁ«»→…"
 HEADER_MARKERS = ("> **Отвечает за:**", "> **Не содержит:**", "> **Читать когда:**")
@@ -141,8 +142,11 @@ def check_freshness(rel, errors, current):
     if rel == CONSTITUTION or current is None:
         return
     head = "\n".join(strip_comments(read(rel)).splitlines()[:25])
+    if not any(line.startswith(FRESH_PREFIX) for line in head.splitlines()):
+        return
     match = FRESH_RE.search(head)
     if not match:
+        errors.append((rel, "метка актуальности не в формате X.Y.Z"))
         return
     marker = tuple(int(x) for x in match.groups())
     shown = ".".join(map(str, marker))
@@ -248,6 +252,25 @@ def check_wiring(errors):
     gitignore = read(".gitignore").splitlines() if (ROOT / ".gitignore").exists() else []
     if ".omc/" not in [line.strip() for line in gitignore]:
         errors.append((".gitignore", "нет строки .omc/"))
+
+
+def check_test_coverage(errors):
+    data = json_file(COVERAGE)
+    if not isinstance(data, dict):
+        errors.append((COVERAGE, "нет файла покрытия тестами или он не объект"))
+        return
+    files = harness_files()
+    for rel in files:
+        refs = data.get(rel)
+        if not isinstance(refs, list) or not refs:
+            errors.append((rel, f"нет записи о тестах в {COVERAGE}"))
+            continue
+        for ref in refs:
+            if not (ROOT / ref).exists():
+                errors.append((COVERAGE, f"{rel}: тест {ref} не существует"))
+    for rel in data:
+        if rel not in files:
+            errors.append((COVERAGE, f"запись о несуществующем файле харнеса {rel}"))
 
 
 def check_map(files, errors):
@@ -387,6 +410,7 @@ def run_checks(staged):
     if (ROOT / CONSTITUTION).exists():
         check_constitution(errors)
     check_wiring(errors)
+    check_test_coverage(errors)
     check_override(errors)
     check_override_drift(errors)
     check_settings(errors)

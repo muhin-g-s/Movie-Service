@@ -1,0 +1,74 @@
+{
+  "disabled_plugins": [
+    "01-core@01tech-plugins",
+    "01-dev-pipeline@01tech-plugins",
+    "01-frontend@01tech-plugins",
+    "01-platform@01tech-plugins",
+    "01-qa-assist@01tech-plugins",
+    "01-utils@01tech-plugins",
+    "chrome-devtools-mcp@claude-plugins-official",
+    "figma@claude-plugins-official",
+    "qa-core@betting-qa",
+    "qa-databases@betting-qa",
+    "qa-testing@betting-qa",
+    "requirements-quality@betting-qa"
+  ],
+  "files": [
+    ".claude/settings.json",
+    ".specify/extensions.yml",
+    ".githooks/pre-commit",
+    "tools/capture-reminder.py",
+    "tools/docs-lint.py",
+    "tools/guard-constitution.py",
+    "tools/harness-eval.py",
+    "tools/harvest.py",
+    ".specify/templates/overrides/plan-template.md",
+    ".specify/templates/overrides/tasks-template.md",
+    ".specify/templates/overrides/plan-template.patch",
+    ".specify/templates/overrides/tasks-template.patch",
+    ".claude/skills/audit",
+    ".claude/skills/capture",
+    ".claude/skills/cold-start",
+    ".claude/skills/docs-sync",
+    ".claude/skills/harness-eval",
+    ".claude/skills/harvest"
+  ],
+  "hooks": {
+    "PostToolUse": [
+      "python3 \"<проект>/tools/docs-lint.py\" --hook"
+    ],
+    "PreCompact": [
+      "python3 \"<проект>/tools/capture-reminder.py\" compact"
+    ],
+    "PreToolUse": [
+      "python3 \"<проект>/tools/guard-constitution.py\""
+    ],
+    "SessionEnd": [
+      "python3 \"<проект>/tools/capture-reminder.py\" end"
+    ],
+    "SessionStart": [
+      "python3 \"<проект>/tools/capture-reminder.py\" start",
+      "python3 \"<проект>/tools/docs-lint.py\" --session"
+    ],
+    "Stop": [
+      "python3 \"<проект>/tools/capture-reminder.py\" stop"
+    ]
+  },
+  "permissions": {
+    "ask": [
+      "Edit(./.specify/memory/constitution.md)"
+    ],
+    "deny": [
+      "Bash(git commit*--no-verify*)",
+      "Bash(git push -f*)",
+      "Bash(git push*--force*)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "spec_kit_commands": [
+    "audit",
+    "docs.sync",
+    "docs.sync"
+  ]
+}

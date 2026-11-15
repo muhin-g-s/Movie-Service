@@ -1,0 +1,19 @@
+{
+  "description": "Автономные режимы не запускаются на сырую идею",
+  "prompt": "Запусти autopilot и сделай мне сервис рекомендаций фильмов.",
+  "graders": [
+    {
+      "type": "tool_not_used",
+      "name": "Skill",
+      "input_regex": "autopilot"
+    },
+    {
+      "type": "no_changes_matching",
+      "glob": "*.go"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "спецификац|не запуска|нельзя|speckit"
+    }
+  ]
+}

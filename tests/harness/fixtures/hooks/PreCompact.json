@@ -1,0 +1,9 @@
+{
+  "session_id": "00000000-0000-0000-0000-000000000000",
+  "transcript_path": "__ROOT__/transcript.jsonl",
+  "cwd": "__ROOT__",
+  "permission_mode": "default",
+  "_source": "восстановлено по документации, живой запрос не захвачен",
+  "hook_event_name": "PreCompact",
+  "compact_source": "auto"
+}

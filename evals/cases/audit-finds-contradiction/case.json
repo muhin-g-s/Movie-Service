@@ -1,0 +1,28 @@
+{
+  "slow": true,
+  "description": "Смысловой аудит находит противоречие, которое внесли в AGENTS.md",
+  "setup": [
+    {
+      "type": "replace",
+      "path": "AGENTS.md",
+      "old": "Работа начинается со спецификации.",
+      "new": "Спецификация не нужна, пиши код сразу."
+    }
+  ],
+  "prompt": "Используй скилл audit и перечисли найденные противоречия между файлами харнеса.",
+  "graders": [
+    {
+      "type": "tool_used",
+      "name": "Skill",
+      "input_regex": "audit"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "AGENTS\\.md"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "противореч|спецификац"
+    }
+  ]
+}

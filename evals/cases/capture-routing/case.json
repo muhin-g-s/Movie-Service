@@ -1,0 +1,14 @@
+{
+  "description": "Решение из чата предлагается записать владельцу через capture, а не теряется",
+  "prompt": "Мы решили, что таймаут HTTP-запросов Backend по умолчанию будет 15 секунд. Сохрани это решение в репозитории так, как принято в проекте.",
+  "graders": [
+    {
+      "type": "file_unchanged",
+      "path": ".specify/memory/constitution.md"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "capture|владел|spec\\.md|research\\.md"
+    }
+  ]
+}
