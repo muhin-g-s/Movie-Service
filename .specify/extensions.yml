@@ -1,0 +1,16 @@
+# Хуки Spec Kit. Описание механизма: docs/development/README.md
+hooks:
+  after_implement:
+    - extension: platform
+      command: docs.sync
+      description: Сверить изменившиеся факты с файлами-владельцами и запустить проверку документации
+      prompt: Выполнить синхронизацию документации перед завершением
+      optional: false
+      enabled: true
+  after_constitution:
+    - extension: platform
+      command: docs.sync
+      description: Проверить, что поправка конституции согласована с остальными файлами
+      prompt: Выполнить синхронизацию документации после поправки конституции
+      optional: false
+      enabled: true

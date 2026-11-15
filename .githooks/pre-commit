@@ -1,0 +1,3 @@
+#!/bin/sh
+# Проверка документации перед коммитом. Включается один раз: git config core.hooksPath .githooks
+exec python3 "$(git rev-parse --show-toplevel)/tools/docs-lint.py" --staged
