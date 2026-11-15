@@ -54,6 +54,15 @@ flowchart TD
     DV["docs/development"]
     OP["docs/operations"]
     DC["docs/decisions<br/>ADR и реестр"]
+    SPK[".claude/skills/speckit-*<br/>команды Spec Kit"]
+    OV[".specify/templates/overrides/tasks-template.md<br/>тесты обязательны"]
+    EXT[".specify/extensions.yml<br/>хуки Spec Kit"]
+    SYNC[".claude/skills/docs-sync<br/>синхронизация документации"]
+    LINT["tools/docs-lint.py<br/>проверка документации"]
+    GUARD["tools/guard-constitution.py<br/>подтверждение записи"]
+    SET[".claude/settings.json<br/>плагины, запреты, хуки"]
+    GIT[".githooks/pre-commit<br/>проверка перед коммитом"]
+    OMC[".omc/<br/>локальное состояние OMC"]
 
     C ==> A ==> CL
     C ==> CR
@@ -61,6 +70,7 @@ flowchart TD
     C ==> AR
     C ==> DV
     C ==> OP
+    C ==> OV
 
     R -.-> D
     R -.-> C
@@ -72,10 +82,25 @@ flowchart TD
     A -.-> CR
     A -.-> S
     A -.-> DC
+    CL -.-> OMC
+
+    SPK -->|читает хуки| EXT
+    SPK -->|берет шаблон| OV
+    EXT -->|после implement и constitution| SYNC
+    SYNC -->|запускает| LINT
+    SET -->|хук после правки| LINT
+    SET -->|хук перед командой| GUARD
+    GIT -->|запускает| LINT
+    GUARD -->|защищает| C
+    LINT -->|проверяет документы и версию| C
+    LINT -->|проверяет| SET
+    LINT -->|проверяет| OV
 ```
 
 - Жирная стрелка `A ==> B`: B опирается на A и не может ему противоречить.
 - Пунктирная стрелка `A -.-> B`: A указывает на B как на источник истины и не копирует его содержимое.
+- Подписанная стрелка `A -->|действие| B`: A выполняет действие над B или запускает его.
+- Каждый файл харнеса (настройки, хуки, скрипты, скиллы проекта, переопределения шаблонов) должен быть показан на схеме, это проверяет [проверка документации](development/README.md#проверка-документации).
 - Обратные навигационные ссылки из конституции на `AGENTS.md`, `code-review.md` и `docs/` зависимость не меняют.
 
 ## Механика ведения документов

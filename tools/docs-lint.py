@@ -184,6 +184,27 @@ def installed_plugin_notice():
     return sorted(n for n in names if n not in ALLOWED_PLUGINS and n not in declared)
 
 
+def harness_files():
+    """Файлы харнеса, которые должны быть показаны на схеме связей."""
+    found = [SETTINGS, ".specify/extensions.yml"]
+    for pattern in (".githooks/*", "tools/*.py", ".specify/templates/overrides/*.md"):
+        found += sorted(str(p.relative_to(ROOT)) for p in ROOT.glob(pattern) if p.is_file())
+    if (ROOT / SKILLS_DIR).is_dir():
+        found += sorted(str(p.parent.relative_to(ROOT)) for p in (ROOT / SKILLS_DIR).glob("*/SKILL.md")
+                        if not p.parent.name.startswith("speckit-"))
+    return [f for f in found if (ROOT / f).exists()]
+
+
+def check_harness_diagram(errors):
+    match = re.search(r"```mermaid(.*?)```", read(MAP_FILE), re.S)
+    if not match:
+        errors.append((MAP_FILE, "нет схемы связей в блоке mermaid"))
+        return
+    for rel in harness_files():
+        if rel not in match.group(1):
+            errors.append((MAP_FILE, f"файл харнеса {rel} не показан на схеме связей"))
+
+
 def git(*args):
     return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
 
@@ -222,6 +243,7 @@ def run_checks(staged):
         check_forbidden(rel, errors)
     if (ROOT / MAP_FILE).exists():
         check_map(files, errors)
+        check_harness_diagram(errors)
     if (ROOT / CONSTITUTION).exists():
         check_constitution(errors)
     check_override(errors)
