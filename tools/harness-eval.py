@@ -69,9 +69,15 @@ def make_workspace(source=ROOT):
     return workspace
 
 
+SETUP_FIELDS = {"replace": ("path", "old", "new"), "write": ("path", "text"), "bump_constitution": ()}
+
+
 def apply_setup(workspace, steps):
     for step in steps or []:
         kind = step.get("type")
+        for field in SETUP_FIELDS.get(kind, ()):
+            if field not in step:
+                raise ValueError(f"в шаге подготовки {kind} нет поля {field}")
         if kind == "replace":
             path = workspace / step["path"]
             text = path.read_text(encoding="utf-8")

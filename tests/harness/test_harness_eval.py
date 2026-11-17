@@ -208,6 +208,11 @@ class TestRunCase(StubCase):
         broken = {**self.case, "setup": [{"type": "replace", "path": "AGENTS.md", "old": "нет такого", "new": "y"}]}
         self.assertIn("нет текста", ev.run_case(broken, "m", 1.0, 60)["error"])
 
+    def test_setup_step_with_missing_field_is_reported_not_raised(self):
+        self.stub(result="x")
+        broken = {**self.case, "setup": [{"type": "write", "path": "x.md", "content": "y"}]}
+        self.assertIn("нет поля text", ev.run_case(broken, "m", 1.0, 60)["error"])
+
     def test_missing_claude_binary_is_reported(self):
         ev.CLAUDE = "/nonexistent/claude"
         outcome = ev.run_case(self.case, "m", 1.0, 60)
@@ -234,6 +239,9 @@ class TestCasesAndSuites(StubCase):
                 self.assertTrue(case["prompt"])
                 self.assertTrue(case["graders"])
                 self.assertTrue({g["type"] for g in case["graders"]} <= allowed)
+                for step in case.get("setup", []):
+                    self.assertIn(step.get("type"), ev.SETUP_FIELDS)
+                    self.assertLessEqual(set(ev.SETUP_FIELDS[step["type"]]), set(step))
 
     def test_cold_start_suite_is_built_from_questions(self):
         cases = ev.cold_start_cases()
