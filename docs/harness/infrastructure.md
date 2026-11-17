@@ -49,7 +49,7 @@
 | скиллы `speckit-*` | шаблоны, скрипты, `.specify/extensions.yml` | пользователь, агенты | скрипты Spec Kit, хуки из `.specify/extensions.yml` |
 | `.specify/scripts/bash/` | шаблоны, git | скиллы `speckit-*` | git |
 | `.specify/templates/` и `.specify/templates/overrides/` | ничего | `resolve-template.sh` по стеку: проект, пресеты, расширения, ядро | ничего |
-| `.specify/extensions.yml` | скиллы проекта | скиллы `speckit-*`, `docs-lint` проверяет соответствие команд скиллам | `docs-sync` и `audit` через скиллы Spec Kit |
+| `.specify/extensions.yml` | скиллы проекта | скиллы `speckit-*`, `docs-lint` проверяет соответствие команд скиллам | `hot-zones`, `docs-sync` и `audit` через скиллы Spec Kit |
 | `.specify/workflows/feature-chain/workflow.yml` | скиллы `speckit-*`, `docs-sync`, `tools/check-feature.py`, `tools/docs-lint.py`, каталог кирпичиков | `specify workflow run feature-chain`, `docs-lint` сверяет с каталогом | скиллы командами шагов, проверки шагами shell |
 
 ### Скиллы проекта
@@ -61,6 +61,7 @@
 | `.claude/skills/capture` | таблица маршрутизации в `AGENTS.md`, карта | пользователь, напоминания | `tools/docs-lint.py`, `tools/capture-reminder.py` с очисткой |
 | `.claude/skills/harvest` | расшифровки, память Claude | пользователь, напоминание при старте | `tools/harvest.py`, `capture`, `tools/capture-reminder.py` с очисткой |
 | `.claude/skills/cold-start` | `.claude/skills/cold-start/questions.md` | пользователь | отдельный агент Explore |
+| `.claude/skills/hot-zones` | реестр зон, спецификация и план фичи | хук Spec Kit перед планом, пользователь | инструмент AskUserQuestion, `tools/docs-lint.py` |
 | `.claude/skills/harness-eval` | сценарии, раннер | пользователь | `tools/harness-eval.py`, `tools/docs-lint.py`, тесты |
 
 ### Скрипты
@@ -124,6 +125,8 @@ flowchart TD
     HE["tools/harness-eval.py<br/>запуск сценариев"]
     HSK[".claude/skills/harness-eval<br/>ручной прогон сценариев"]
     CHK["tools/check-feature.py<br/>проверка артефактов фичи"]
+    HZ[".claude/skills/hot-zones<br/>опрос о горячих зонах"]
+    HZD["docs/architecture/hot-zones.md<br/>реестр зон"]
     WF[".specify/workflows/feature-chain/workflow.yml<br/>цепочка фичи без диалога"]
     BRK["docs/harness/bricks.md<br/>кирпичики и уровни контроля"]
 
@@ -175,6 +178,10 @@ flowchart TD
     TST -->|проверяет| LINT
     TST -->|проверяет| REM
     LINT -->|требует тест для каждого файла харнеса| TST
+    EXT -->|перед планом| HZ
+    HZ -->|записывает ответ| HZD
+    HZ -->|правила ask по путям зон| SET
+    LINT -->|проверяет реестр зон| HZD
     WF -->|команды шагов| SPK
     WF -->|после каждого шага проверка| CHK
     WF -->|шаги берутся из| BRK

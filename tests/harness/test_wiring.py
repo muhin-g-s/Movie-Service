@@ -102,6 +102,9 @@ class TestSpecKitHooks(WiringCase):
         self.assertRegex(text, r"(?s)after_constitution:.*command: docs\.sync.*optional: false")
         self.assertRegex(text, r"(?s)command: audit.*optional: true")
 
+    def test_before_plan_asks_about_hot_zones(self):
+        self.assertRegex(self.repo.read(".specify/extensions.yml"), r"(?s)before_plan:.*command: hot-zones.*optional: false")
+
     def test_after_implement_runs_docs_sync(self):
         self.assertRegex(self.repo.read(".specify/extensions.yml"), r"(?s)after_implement:.*command: docs\.sync")
 

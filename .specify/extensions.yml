@@ -1,5 +1,12 @@
 # Хуки Spec Kit. Описание механизма: docs/harness/reference.md
 hooks:
+  before_plan:
+    - extension: platform
+      command: hot-zones
+      description: Спросить владельца, затрагивает ли фича горячие зоны
+      prompt: Выполнить опрос о горячих зонах перед планом
+      optional: false
+      enabled: true
   after_implement:
     - extension: platform
       command: docs.sync
