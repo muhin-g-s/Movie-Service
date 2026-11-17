@@ -104,7 +104,7 @@ flowchart TD
     OP["docs/operations"]
     DC["docs/decisions<br/>ADR и реестр"]
     SPK[".claude/skills/speckit-*<br/>команды Spec Kit"]
-    OV[".specify/templates/overrides/tasks-template.md<br/>.specify/templates/overrides/tasks-template.patch<br/>.specify/templates/overrides/plan-template.md<br/>.specify/templates/overrides/plan-template.patch<br/>тесты обязательны, версия конституции в плане"]
+    OV[".specify/templates/overrides/tasks-template.md<br/>.specify/templates/overrides/tasks-template.patch<br/>.specify/templates/overrides/plan-template.md<br/>.specify/templates/overrides/plan-template.patch<br/>.specify/templates/overrides/spec-template.md<br/>.specify/templates/overrides/spec-template.patch<br/>тесты обязательны, версия конституции, зоны и образец в плане, уровень контроля в спецификации"]
     AUD[".claude/skills/audit<br/>смысловой аудит"]
     EXT[".specify/extensions.yml<br/>хуки Spec Kit"]
     SYNC[".claude/skills/docs-sync<br/>синхронизация документации"]

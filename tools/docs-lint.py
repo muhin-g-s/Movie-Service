@@ -24,6 +24,8 @@ MAP_FILE = "docs/README.md"
 REFERENCE_FILE = "docs/harness/reference.md"
 INFRA_FILE = "docs/harness/infrastructure.md"
 BRICKS_FILE = "docs/harness/bricks.md"
+ZONES_FILE = "docs/architecture/hot-zones.md"
+PATTERNS_FILE = "docs/architecture/patterns.md"
 ADR_GLOB = "docs/decisions/[0-9][0-9][0-9][0-9]-*.md"
 REGISTRY = "docs/decisions/README.md"
 REGISTRY_ANCHOR = "отложенные-решения"
@@ -46,6 +48,13 @@ PRINCIPLE_REF = re.compile(r"(?i:принцип)\w*\s+(\b[IVX]+\b(?:(?:\s*,\s*|\
 BRICK_COLUMNS = ["Кирпичик", "Что делает", "Исполнитель", "Роль OMC", "Диалог", "Уровни контроля",
                  "Проверка результата", "Статус"]
 LEVEL_COLUMNS = ["Уровень", "Что значит"]
+CATEGORY_COLUMNS = ["Категория", "Критерий", "Статус"]
+ZONE_COLUMNS = ["Зона", "Категория", "Пути", "Уровень контроля"]
+PATTERN_COLUMNS = ["Образец", "Когда применять", "Эталон", "Инварианты", "Антипаттерны", "Проверен", "Статус"]
+CATEGORY_STATUSES = {"кандидат", "подтверждена"}
+PATTERN_STATUSES = {"черновик", "утвержден"}
+OVERRIDE_PLAN = ".specify/templates/overrides/plan-template.md"
+OVERRIDE_SPEC = ".specify/templates/overrides/spec-template.md"
 ALLOWED_PLUGINS = {"oh-my-claudecode@omc"}
 ALLOW_MISSING_PATHS = {".omc/", ".specify/feature.json"}
 FOOTER = re.compile(
@@ -442,6 +451,146 @@ def check_workflows(errors):
                 errors.append((rel, f"неизвестный уровень контроля {level}"))
 
 
+def table_cells(rel, heading, columns):
+    """Строки таблицы как словари. None, если нет таблицы или столбцы не те."""
+    table = md_table(rel, heading) if (ROOT / rel).exists() else None
+    if not table or table[0] != columns:
+        return None
+    return [dict(zip(columns, row)) for row in table[1] if len(row) == len(columns)]
+
+
+def control_levels():
+    rows = md_table(BRICKS_FILE, "Уровни контроля") if (ROOT / BRICKS_FILE).exists() else None
+    return {row[0] for row in rows[1] if row} if rows else set()
+
+
+def zone_names():
+    return {row["Зона"] for row in table_cells(ZONES_FILE, "Размеченные зоны", ZONE_COLUMNS) or []}
+
+
+def pattern_names():
+    return {row["Образец"] for row in table_cells(PATTERNS_FILE, "Образцы", PATTERN_COLUMNS) or []}
+
+
+def settings_ask_rules():
+    data = json_file(SETTINGS)
+    permissions = data.get("permissions", {}) if isinstance(data, dict) else {}
+    ask = permissions.get("ask", []) if isinstance(permissions, dict) else []
+    return set(ask) if isinstance(ask, list) else set()
+
+
+def check_zones(errors):
+    if not (ROOT / ZONES_FILE).exists():
+        errors.append((ZONES_FILE, "нет реестра горячих зон"))
+        return
+    categories = table_cells(ZONES_FILE, "Категории", CATEGORY_COLUMNS)
+    if categories is None:
+        errors.append((ZONES_FILE, "нет таблицы категорий со столбцами " + ", ".join(CATEGORY_COLUMNS)))
+        categories = []
+    for row in categories:
+        if row["Статус"] not in CATEGORY_STATUSES:
+            errors.append((ZONES_FILE, f"категория {row['Категория']}: неизвестный статус {row['Статус']}"))
+    zones = table_cells(ZONES_FILE, "Размеченные зоны", ZONE_COLUMNS)
+    if zones is None:
+        errors.append((ZONES_FILE, "нет таблицы размеченных зон со столбцами " + ", ".join(ZONE_COLUMNS)))
+        return
+    known_categories = {row["Категория"] for row in categories}
+    levels = control_levels()
+    ask = settings_ask_rules()
+    seen = set()
+    for row in zones:
+        name = row["Зона"]
+        if not name or name in seen:
+            errors.append((ZONES_FILE, f"имя зоны пусто или повторяется: {name!r}"))
+        seen.add(name)
+        if row["Категория"] not in known_categories:
+            errors.append((ZONES_FILE, f"зона {name}: неизвестная категория {row['Категория']}"))
+        if row["Уровень контроля"] not in levels:
+            errors.append((ZONES_FILE, f"зона {name}: неизвестный уровень контроля {row['Уровень контроля']}"))
+        paths = re.findall(r"`([^`]+)`", row["Пути"])
+        if not paths:
+            errors.append((ZONES_FILE, f"зона {name}: не указаны пути в обратных кавычках"))
+        for path in paths:
+            if f"Edit(./{path})" not in ask:
+                errors.append((ZONES_FILE, f"зона {name}: в {SETTINGS} нет правила ask Edit(./{path})"))
+
+
+def commit_exists(commit):
+    return git("cat-file", "-e", f"{commit}^{{commit}}").returncode == 0
+
+
+def check_patterns(errors):
+    if not (ROOT / PATTERNS_FILE).exists():
+        errors.append((PATTERNS_FILE, "нет каталога образцов"))
+        return
+    rows = table_cells(PATTERNS_FILE, "Образцы", PATTERN_COLUMNS)
+    if rows is None:
+        errors.append((PATTERNS_FILE, "нет таблицы образцов со столбцами " + ", ".join(PATTERN_COLUMNS)))
+        return
+    seen = set()
+    for row in rows:
+        name = row["Образец"]
+        if not name or name in seen:
+            errors.append((PATTERNS_FILE, f"имя образца пусто или повторяется: {name!r}"))
+        seen.add(name)
+        if row["Статус"] not in PATTERN_STATUSES:
+            errors.append((PATTERNS_FILE, f"образец {name}: неизвестный статус {row['Статус']}"))
+        if not re.fullmatch(r"`[^`]+`", row["Эталон"]):
+            errors.append((PATTERNS_FILE, f"образец {name}: эталон должен быть путем в обратных кавычках"))
+        if not re.fullmatch(r"[0-9a-f]{7,40}", row["Проверен"]) or not commit_exists(row["Проверен"]):
+            errors.append((PATTERNS_FILE, f"образец {name}: в столбце Проверен нужен существующий коммит"))
+
+
+def field_value(text, label):
+    match = re.search(r"\*\*" + re.escape(label) + r"\*\*:[ \t]*(.*)", text)
+    return match.group(1).strip() if match else None
+
+
+def reference_error(value, known):
+    """Значение поля: 'нет' с причиной или список известных имен через запятую."""
+    if re.match(r"нет\b", value):
+        return None
+    unknown = [item.strip() for item in value.split(",") if item.strip() not in known]
+    return ", ".join(unknown) if unknown else None
+
+
+def check_artifact_fields(errors):
+    levels = control_levels()
+    zones, patterns = zone_names(), pattern_names()
+    root = ROOT / "specs"
+    for spec in sorted(root.glob("*/spec.md")) if root.is_dir() else []:
+        rel = str(spec.relative_to(ROOT))
+        value = field_value(spec.read_text(encoding="utf-8", errors="replace"), "Control level")
+        if value is None:
+            errors.append((rel, "в спецификации нет поля Control level"))
+        elif value.startswith("[") or value not in levels:
+            errors.append((rel, f"Control level должен быть одним из уровней контроля, сейчас: {value}"))
+    for plan in sorted(root.glob("*/plan.md")) if root.is_dir() else []:
+        rel = str(plan.relative_to(ROOT))
+        text = plan.read_text(encoding="utf-8", errors="replace")
+        for label, known, source in (("Hot zones touched", zones, "реестре зон"), ("Pattern", patterns, "каталоге образцов")):
+            value = field_value(text, label)
+            if value is None:
+                errors.append((rel, f"в плане нет поля {label}"))
+            elif not value or value.startswith("["):
+                errors.append((rel, f"поле {label} не заполнено"))
+            else:
+                unknown = reference_error(value, known)
+                if unknown:
+                    errors.append((rel, f"поле {label}: нет в {source}: {unknown}"))
+
+
+def check_template_fields(errors):
+    for rel, labels in ((OVERRIDE_PLAN, ("Hot zones touched", "Pattern")), (OVERRIDE_SPEC, ("Control level",))):
+        if not (ROOT / rel).exists():
+            errors.append((rel, "нет переопределения шаблона с обязательными полями " + ", ".join(labels)))
+            continue
+        text = read(rel)
+        for label in labels:
+            if field_value(text, label) is None:
+                errors.append((rel, f"в шаблоне нет поля {label}"))
+
+
 def check_constitution(errors):
     match = FOOTER.search(read(CONSTITUTION))
     if not match:
@@ -574,6 +723,10 @@ def run_checks(staged):
         check_constitution(errors)
     check_bricks(errors)
     check_workflows(errors)
+    check_zones(errors)
+    check_patterns(errors)
+    check_artifact_fields(errors)
+    check_template_fields(errors)
     check_wiring(errors)
     check_test_coverage(errors)
     check_override(errors)

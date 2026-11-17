@@ -32,6 +32,12 @@
   ".specify/templates/overrides/plan-template.patch": [
     "tests/harness/test_docs_lint.py"
   ],
+  ".specify/templates/overrides/spec-template.md": [
+    "tests/harness/test_docs_lint.py"
+  ],
+  ".specify/templates/overrides/spec-template.patch": [
+    "tests/harness/test_docs_lint.py"
+  ],
   ".specify/templates/overrides/tasks-template.md": [
     "tests/harness/test_docs_lint.py"
   ],

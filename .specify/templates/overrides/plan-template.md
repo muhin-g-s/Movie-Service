@@ -4,6 +4,10 @@
 
 **Constitution version**: [X.Y.Z, copy from the footer of the project constitution when the plan is written]
 
+**Hot zones touched**: [zone names from docs/architecture/hot-zones.md separated by commas, or "нет"; if unsure whether touched code is a hot zone, ask the owner and record the answer in that file]
+
+**Pattern**: [name of the approved pattern from docs/architecture/patterns.md this plan follows, or "нет" with the reason]
+
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
 **Note**: This template is filled in by the `/speckit-plan` command; its definition describes the execution workflow.

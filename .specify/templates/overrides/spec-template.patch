@@ -1,0 +1,11 @@
+--- core
++++ override
+@@ -6,6 +6,8 @@
+ 
+ **Status**: Draft
+ 
++**Control level**: [one of the control levels from docs/harness/bricks.md, default for the steps of this feature; a hot zone raises it]
++
+ **Input**: User description: "$ARGUMENTS"
+ 
+ ## User Scenarios & Testing *(mandatory)*

@@ -357,6 +357,162 @@ class TestWorkflows(LintCase):
         self.assertNotIn("speckit/workflow.yml", self.repo.lint().stdout)
 
 
+class TestZonesAndPatterns(LintCase):
+    ZONES = "docs/architecture/hot-zones.md"
+    PATTERNS = "docs/architecture/patterns.md"
+    ZONE_ROW = "| Платежи | деньги | `tools/docs-lint.py` | контрольная точка |\n"
+
+    def add_zone(self, row=None, ask=True):
+        self.repo.append(self.ZONES, row or self.ZONE_ROW)
+        if ask:
+            settings = json.loads(self.repo.read(".claude/settings.json"))
+            settings["permissions"]["ask"].append("Edit(./tools/docs-lint.py)")
+            self.repo.write(".claude/settings.json", json.dumps(settings, ensure_ascii=False, indent=2))
+
+    def add_pattern(self, row=None):
+        head = self.repo.git("rev-parse", "HEAD").stdout.strip()
+        self.repo.append(self.PATTERNS, row or f"| CRUD | новая сущность | `tools/docs-lint.py` | тест первым | без контракта | {head} | утвержден |\n")
+
+    @covers("check_zones")
+    def test_missing_zone_registry(self):
+        self.repo.path(self.ZONES).unlink()
+        self.detected("нет реестра горячих зон")
+
+    def test_zone_table_columns(self):
+        self.repo.replace(self.ZONES, "| Зона | Категория | Пути | Уровень контроля |", "| Зона | Категория | Файлы | Уровень контроля |")
+        self.detected("нет таблицы размеченных зон")
+
+    def test_category_status_is_checked(self):
+        self.repo.replace(self.ZONES, "| кандидат |", "| готово |")
+        self.detected("неизвестный статус готово")
+
+    def test_valid_zone_with_ask_rule_is_clean(self):
+        self.add_zone()
+        self.clean()
+
+    def test_zone_without_ask_rule(self):
+        self.add_zone(ask=False)
+        self.detected("нет правила ask Edit(./tools/docs-lint.py)")
+
+    def test_zone_with_unknown_category(self):
+        self.add_zone("| Платежи | казна | `tools/docs-lint.py` | контрольная точка |\n")
+        self.detected("неизвестная категория казна")
+
+    def test_zone_with_unknown_level(self):
+        self.add_zone("| Платежи | деньги | `tools/docs-lint.py` | свободный |\n")
+        self.detected("неизвестный уровень контроля свободный")
+
+    def test_zone_without_paths(self):
+        self.add_zone("| Платежи | деньги | - | контрольная точка |\n")
+        self.detected("не указаны пути")
+
+    def test_zone_name_repeats(self):
+        self.add_zone(self.ZONE_ROW + self.ZONE_ROW)
+        self.detected("пусто или повторяется")
+
+    @covers("check_patterns")
+    def test_missing_pattern_catalog(self):
+        self.repo.path(self.PATTERNS).unlink()
+        self.detected("нет каталога образцов")
+
+    def test_pattern_table_columns(self):
+        self.repo.replace(self.PATTERNS, "| Эталон |", "| Пример |")
+        self.detected("нет таблицы образцов")
+
+    def test_valid_pattern_is_clean(self):
+        self.add_pattern()
+        self.clean()
+
+    def test_pattern_with_unknown_commit(self):
+        self.add_pattern("| CRUD | когда | `tools/docs-lint.py` | и | а | deadbeef | утвержден |\n")
+        self.detected("нужен существующий коммит")
+
+    def test_pattern_status_is_checked(self):
+        head = self.repo.git("rev-parse", "HEAD").stdout.strip()
+        self.add_pattern(f"| CRUD | когда | `tools/docs-lint.py` | и | а | {head} | готов |\n")
+        self.detected("неизвестный статус готов")
+
+    def test_pattern_reference_must_be_a_path(self):
+        head = self.repo.git("rev-parse", "HEAD").stdout.strip()
+        self.add_pattern(f"| CRUD | когда | в коде | и | а | {head} | утвержден |\n")
+        self.detected("эталон должен быть путем")
+
+    def test_pattern_with_missing_reference_path(self):
+        head = self.repo.git("rev-parse", "HEAD").stdout.strip()
+        self.add_pattern(f"| CRUD | когда | `src/nope.go` | и | а | {head} | утвержден |\n")
+        self.detected("несуществующий путь src/nope.go")
+
+
+class TestArtifactFields(LintCase):
+    SPEC = "specs/001-demo/spec.md"
+    PLAN = "specs/001-demo/plan.md"
+
+    def spec(self, level="контрольная точка"):
+        self.repo.write(self.SPEC, f"# Спецификация\n\n**Control level**: {level}\n")
+
+    def plan(self, zones="нет", pattern="нет, образцов еще нет"):
+        version = self.repo.read(CONSTITUTION).split("**Версия**: ")[1].split(" ")[0]
+        self.repo.write(self.PLAN, f"# План\n\n**Constitution version**: {version}\n\n"
+                                   f"**Hot zones touched**: {zones}\n\n**Pattern**: {pattern}\n")
+
+    @covers("check_artifact_fields")
+    def test_spec_without_control_level(self):
+        self.repo.write(self.SPEC, "# Спецификация\n")
+        self.detected("нет поля Control level")
+
+    def test_spec_with_unknown_control_level(self):
+        self.spec("свободный")
+        self.detected("Control level должен быть одним из уровней контроля")
+
+    def test_spec_with_unfilled_template_value(self):
+        self.spec("[one of the control levels]")
+        self.detected("Control level должен быть одним из уровней контроля")
+
+    def test_valid_spec_and_plan_are_clean(self):
+        self.spec()
+        self.plan()
+        self.clean()
+
+    def test_plan_without_zones_field(self):
+        self.repo.write(self.PLAN, self.repo.read(CONSTITUTION)[:0] + "# План\n\n**Constitution version**: 2.4.1\n\n**Pattern**: нет\n")
+        self.detected("в плане нет поля Hot zones touched")
+
+    def test_plan_with_unfilled_pattern(self):
+        self.plan(pattern="[name of the approved pattern]")
+        self.detected("поле Pattern не заполнено")
+
+    def test_plan_with_unknown_zone(self):
+        self.plan(zones="Платежи")
+        self.detected("поле Hot zones touched: нет в реестре зон: Платежи")
+
+    def test_plan_with_unknown_pattern(self):
+        self.plan(pattern="CRUD")
+        self.detected("поле Pattern: нет в каталоге образцов: CRUD")
+
+    def test_plan_with_known_zone_and_pattern(self):
+        head = self.repo.git("rev-parse", "HEAD").stdout.strip()
+        self.repo.append("docs/architecture/hot-zones.md", "| Платежи | деньги | `tools/docs-lint.py` | контрольная точка |\n")
+        settings = json.loads(self.repo.read(".claude/settings.json"))
+        settings["permissions"]["ask"].append("Edit(./tools/docs-lint.py)")
+        self.repo.write(".claude/settings.json", json.dumps(settings, ensure_ascii=False, indent=2))
+        self.repo.append("docs/architecture/patterns.md", f"| CRUD | когда | `tools/docs-lint.py` | и | а | {head} | утвержден |\n")
+        self.plan(zones="Платежи", pattern="CRUD")
+        self.clean()
+
+    @covers("check_template_fields")
+    def test_plan_template_without_fields(self):
+        self.repo.replace(".specify/templates/overrides/plan-template.md", "**Pattern**:", "**Sample**:")
+        self.detected("в шаблоне нет поля Pattern")
+
+    def test_spec_template_without_field(self):
+        self.repo.replace(".specify/templates/overrides/spec-template.md", "**Control level**:", "**Level**:")
+        self.detected("в шаблоне нет поля Control level")
+
+    def test_missing_spec_template_override(self):
+        self.repo.path(".specify/templates/overrides/spec-template.md").unlink()
+        self.detected("нет переопределения шаблона с обязательными полями Control level")
+
+
 class TestConstitutionAndTemplates(LintCase):
     @covers("check_constitution")
     def test_invalid_date(self):
@@ -410,12 +566,12 @@ class TestConstitutionAndTemplates(LintCase):
 
     def test_plan_with_current_version_passes(self):
         version = ".".join(FOOTER.search(self.repo.read(CONSTITUTION)).group(2, 3, 4))
-        self.repo.write("specs/001-x/plan.md", f"# Plan\n**Constitution version**: {version}\n")
+        self.repo.write("specs/001-x/plan.md", f"# Plan\n**Constitution version**: {version}\n**Hot zones touched**: нет\n**Pattern**: нет, образцов еще нет\n")
         self.clean()
 
     def test_stale_plan_flagged_after_minor_bump(self):
         version = ".".join(FOOTER.search(self.repo.read(CONSTITUTION)).group(2, 3, 4))
-        self.repo.write("specs/001-x/plan.md", f"# Plan\n**Constitution version**: {version}\n")
+        self.repo.write("specs/001-x/plan.md", f"# Plan\n**Constitution version**: {version}\n**Hot zones touched**: нет\n**Pattern**: нет\n")
         bump(self.repo, "minor")
         for rel in load_tool("docs-lint").scope_files():
             if rel != CONSTITUTION:
