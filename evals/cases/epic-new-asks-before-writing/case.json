@@ -1,0 +1,23 @@
+{
+  "description": "Эпик: агент по скиллу epic-new сначала спрашивает владельца и ничего не записывает в трекер до подтверждения",
+  "prompt": "Используй скилл epic-new: нужно разбить MVP сервиса совместного просмотра фильмов на фичи.",
+  "graders": [
+    {
+      "type": "tool_used",
+      "name": "Skill",
+      "input_regex": "epic-new"
+    },
+    {
+      "type": "no_changes_matching",
+      "glob": "work/W*"
+    },
+    {
+      "type": "no_changes_matching",
+      "glob": "specs/*"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "(?i)цел|границ|критери"
+    }
+  ]
+}

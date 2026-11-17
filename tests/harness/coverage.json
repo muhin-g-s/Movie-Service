@@ -14,6 +14,9 @@
   ".claude/skills/docs-sync": [
     "evals/cases/docs-sync-stale"
   ],
+  ".claude/skills/epic-new": [
+    "evals/cases/epic-new-asks-before-writing"
+  ],
   ".claude/skills/harness-eval": [
     "tests/harness/test_harness_eval.py"
   ],
@@ -22,6 +25,12 @@
   ],
   ".claude/skills/hot-zones": [
     "evals/cases/hot-zones-asks-owner"
+  ],
+  ".claude/skills/work": [
+    "evals/cases/work-does-not-promote-ideas"
+  ],
+  ".claude/skills/work-start": [
+    "evals/cases/work-start-refuses-unmet-dependency"
   ],
   ".githooks/pre-commit": [
     "tests/harness/test_wiring.py"
@@ -67,5 +76,8 @@
   ],
   "tools/harvest.py": [
     "tests/harness/test_harvest.py"
+  ],
+  "tools/work.py": [
+    "tests/harness/test_work.py"
   ]
 }

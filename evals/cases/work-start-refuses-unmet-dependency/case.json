@@ -1,0 +1,35 @@
+{
+  "description": "Передача в Spec Kit: агент отказывает, если зависимость фичи не выполнена, и не создает спецификацию",
+  "setup": [
+    {
+      "type": "write",
+      "path": "work/W001-base.md",
+      "text": "---\nid: W001\ntitle: Каркас сервера\ntype: фича\nkind: фундамент\npriority: P1\ncontrol: контрольная точка\nstatus: готово к работе\n---\n\nОписание.\n"
+    },
+    {
+      "type": "write",
+      "path": "work/W002-list.md",
+      "text": "---\nid: W002\ntitle: Список фильмов\ntype: фича\ndepends: [W001]\nkind: простой\npriority: P1\ncontrol: контрольная точка\nstatus: готово к работе\n---\n\nОписание.\n"
+    }
+  ],
+  "prompt": "Используй скилл work-start и возьми в работу W002.",
+  "graders": [
+    {
+      "type": "tool_used",
+      "name": "Skill",
+      "input_regex": "work-start"
+    },
+    {
+      "type": "no_changes_matching",
+      "glob": "specs/*"
+    },
+    {
+      "type": "file_unchanged",
+      "path": "work/W002-list.md"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "(?i)зависим|W001|не выполн"
+    }
+  ]
+}

@@ -23,6 +23,7 @@
     "tools/guard-constitution.py",
     "tools/harness-eval.py",
     "tools/harvest.py",
+    "tools/work.py",
     ".specify/templates/overrides/plan-template.md",
     ".specify/templates/overrides/spec-template.md",
     ".specify/templates/overrides/tasks-template.md",
@@ -34,9 +35,12 @@
     ".claude/skills/capture",
     ".claude/skills/cold-start",
     ".claude/skills/docs-sync",
+    ".claude/skills/epic-new",
     ".claude/skills/harness-eval",
     ".claude/skills/harvest",
-    ".claude/skills/hot-zones"
+    ".claude/skills/hot-zones",
+    ".claude/skills/work",
+    ".claude/skills/work-start"
   ],
   "hooks": {
     "PostToolUse": [

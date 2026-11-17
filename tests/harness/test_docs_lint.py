@@ -22,6 +22,13 @@ def covers(name):
     return decorator
 
 
+def link_feature(repo, folder, ident="W001"):
+    """Привязывает каталог фичи к элементу трекера, иначе проверка трекера считает фичу сиротой."""
+    repo.write(f"work/{ident}-feature.md",
+               f"---\nid: {ident}\ntitle: T\ntype: фича\nkind: простой\npriority: P1\n"
+               f"control: контрольная точка\nspec: {folder}\n---\n")
+
+
 def bump(repo, part="minor"):
     text = repo.read(CONSTITUTION)
     match = FOOTER.search(text)
@@ -452,11 +459,13 @@ class TestArtifactFields(LintCase):
 
     def spec(self, level="контрольная точка"):
         self.repo.write(self.SPEC, f"# Спецификация\n\n**Control level**: {level}\n")
+        link_feature(self.repo, "specs/001-demo")
 
     def plan(self, zones="нет", pattern="нет, образцов еще нет"):
         version = self.repo.read(CONSTITUTION).split("**Версия**: ")[1].split(" ")[0]
         self.repo.write(self.PLAN, f"# План\n\n**Constitution version**: {version}\n\n"
                                    f"**Hot zones touched**: {zones}\n\n**Pattern**: {pattern}\n")
+        link_feature(self.repo, "specs/001-demo")
 
     @covers("check_artifact_fields")
     def test_spec_without_control_level(self):
@@ -516,6 +525,28 @@ class TestArtifactFields(LintCase):
         self.detected("нет переопределения шаблона с обязательными полями Control level")
 
 
+class TestWork(LintCase):
+    ITEM = "---\nid: W001\ntitle: T\ntype: задача\npriority: P1\nstatus: идея\n---\n"
+
+    @covers("check_work")
+    def test_tracker_problem_fails_the_general_check(self):
+        self.repo.write("work/W001-a.md", self.ITEM)
+        self.repo.write("work/W001-b.md", self.ITEM)
+        self.detected("повторяется id W001")
+
+    def test_feature_without_item_fails_the_general_check(self):
+        self.repo.write("specs/001-lonely/spec.md", "# Спецификация\n")
+        self.detected("не привязана к элементу work/")
+
+    def test_valid_tracker_is_clean(self):
+        self.repo.write("work/W001-a.md", self.ITEM)
+        self.clean()
+
+    def test_missing_tool(self):
+        self.repo.path("tools/work.py").unlink()
+        self.detected("нет скрипта трекера работы")
+
+
 class TestConstitutionAndTemplates(LintCase):
     @covers("check_constitution")
     def test_invalid_date(self):
@@ -570,6 +601,7 @@ class TestConstitutionAndTemplates(LintCase):
     def test_plan_with_current_version_passes(self):
         version = ".".join(FOOTER.search(self.repo.read(CONSTITUTION)).group(2, 3, 4))
         self.repo.write("specs/001-x/plan.md", f"# Plan\n**Constitution version**: {version}\n**Hot zones touched**: нет\n**Pattern**: нет, образцов еще нет\n")
+        link_feature(self.repo, "specs/001-x")
         self.clean()
 
     def test_stale_plan_flagged_after_minor_bump(self):

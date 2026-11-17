@@ -13,7 +13,7 @@
 |---|---|---|
 | [architecture](architecture/README.md) | устройство системы | частично, ждет MVP |
 | [harness](harness/README.md) | харнес: границы зон, возможности, инфраструктура, справочник, гейты | описан |
-| [decisions](decisions/README.md) | ADR и реестр отложенных решений | восемь ADR, реестр ведется |
+| [decisions](decisions/README.md) | ADR и реестр отложенных решений | девять ADR, реестр ведется |
 | [development](development/README.md) | разработка сервиса: окружение, команды, тестирование | не определено |
 | [operations](operations/README.md) | конфигурация, деплой, эксплуатация | не определено |
 
@@ -46,6 +46,7 @@
 | справочник скиллов, скриптов, хуков, формат сценариев | [reference.md](harness/reference.md) |
 | гейты качества и пример запуска в CI | [quality-gates.md](harness/quality-gates.md) |
 | кирпичики воркфлоу и уровни контроля шага | [bricks.md](harness/bricks.md) |
+| очередность работы, эпики, зависимости, приоритеты, прогресс | формат и правила в [reference.md](harness/reference.md#трекер-работы), данные в `work/`, причины в [ADR 0009](decisions/0009-file-work-tracker.md) |
 | горячие зоны кода и данных, категории и критерии | [hot-zones.md](architecture/hot-zones.md) |
 | каталог утвержденных образцов реализации | [patterns.md](architecture/patterns.md) |
 | рабочее состояние агентов | локальный каталог `.omc/`, игнорируется git, источником истины не является |

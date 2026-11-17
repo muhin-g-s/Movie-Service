@@ -36,3 +36,5 @@
 | 25 | Что делать, если неясно, является ли затронутый код горячей зоной? | `.specify/memory/constitution.md` |
 | 26 | Где записаны горячие зоны проекта и их категории? | `docs/architecture/hot-zones.md` |
 | 27 | С чего начинается исправление ошибки харнеса и когда перепрогоняются сценарии поведения? | `.specify/memory/constitution.md` |
+| 28 | Где ведутся эпики и очередность работы и как узнать, какую фичу брать дальше? | `docs/harness/reference.md` или `docs/harness/capabilities.md` |
+| 29 | Как элемент трекера связан со спецификацией фичи и откуда берется статус фичи? | `docs/harness/reference.md` или `docs/decisions/0009-file-work-tracker.md` |

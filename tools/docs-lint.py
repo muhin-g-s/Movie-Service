@@ -11,6 +11,7 @@
     python3 tools/docs-lint.py --rebuild-overrides пересобрать переопределения из ядра Spec Kit и патчей
 """
 import datetime
+import importlib.util
 import json
 import re
 import subprocess
@@ -591,6 +592,20 @@ def check_template_fields(errors):
                 errors.append((rel, f"в шаблоне нет поля {label}"))
 
 
+def check_work(errors):
+    """Трекер работы: проверки живут в tools/work.py, здесь они входят в общую проверку и git-хук."""
+    path = ROOT / "tools" / "work.py"
+    if not path.exists():
+        errors.append(("tools/work.py", "нет скрипта трекера работы"))
+        return
+    spec = importlib.util.spec_from_file_location("work_for_lint", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.ROOT = ROOT
+    for rel, message in module.problems(control_levels() or None):
+        errors.append((rel, message))
+
+
 def check_constitution(errors):
     match = FOOTER.search(read(CONSTITUTION))
     if not match:
@@ -724,6 +739,7 @@ def run_checks(staged):
     check_bricks(errors)
     check_workflows(errors)
     check_zones(errors)
+    check_work(errors)
     check_patterns(errors)
     check_artifact_fields(errors)
     check_template_fields(errors)

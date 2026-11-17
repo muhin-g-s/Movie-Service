@@ -61,6 +61,9 @@
 | `.claude/skills/capture` | таблица маршрутизации в `AGENTS.md`, карта | пользователь, напоминания | `tools/docs-lint.py`, `tools/capture-reminder.py` с очисткой |
 | `.claude/skills/harvest` | расшифровки, память Claude | пользователь, напоминание при старте | `tools/harvest.py`, `capture`, `tools/capture-reminder.py` с очисткой |
 | `.claude/skills/cold-start` | `.claude/skills/cold-start/questions.md` | пользователь | отдельный агент Explore |
+| `.claude/skills/epic-new` | трекер работы, реестр отложенных решений, `docs/harness/bricks.md` | пользователь | `tools/work.py`, инструмент AskUserQuestion |
+| `.claude/skills/work-start` | трекер работы, скилл `speckit-specify` | пользователь | `tools/work.py`, `/speckit-specify` |
+| `.claude/skills/work` | трекер работы | пользователь | `tools/work.py` |
 | `.claude/skills/hot-zones` | реестр зон, спецификация и план фичи | хук Spec Kit перед планом, пользователь | инструмент AskUserQuestion, `tools/docs-lint.py` |
 | `.claude/skills/harness-eval` | сценарии, раннер | пользователь | `tools/harness-eval.py`, `tools/docs-lint.py`, тесты |
 
@@ -71,6 +74,7 @@
 | `tools/docs-lint.py` | все документы, `.claude/settings.json`, `.specify/extensions.yml`, шаблоны и патчи, `tests/harness/coverage.json`, git | git-хук, хуки Claude Code, скиллы `docs-sync`, `capture`, `audit`, `harness-eval`, тесты, пользователь | git, diff, patch |
 | `tools/guard-constitution.py` | данные хука | хук PreToolUse | ничего |
 | `tools/capture-reminder.py` | данные хука, состояние в папке проекта | хуки Stop, SessionEnd, PreCompact, SessionStart, скиллы очищают | ничего |
+| `tools/work.py` | файлы в `work/`, каталоги в `specs/`, `tools/docs-lint.py` для уровней контроля | скиллы `epic-new`, `work-start`, `work`, `tools/docs-lint.py` и git-хук проверяют, пользователь | ничего |
 | `tools/check-feature.py` | `.specify/feature.json`, артефакты фичи в `specs/`, версия конституции из `tools/docs-lint.py` | шаги shell цепочки `feature-chain`, пользователь | ничего |
 | `tools/harvest.py` | расшифровки и память в папке проекта, документы репозитория | скилл `harvest` | ничего |
 | `tools/harness-eval.py` | `claude`, сценарии, вопросы `cold-start` | скилл `harness-eval`, пользователь | `claude -p`, git |
@@ -126,6 +130,11 @@ flowchart TD
     HSK[".claude/skills/harness-eval<br/>ручной прогон сценариев"]
     CHK["tools/check-feature.py<br/>проверка артефактов фичи"]
     HZ[".claude/skills/hot-zones<br/>опрос о горячих зонах"]
+    WK["tools/work.py<br/>трекер работы"]
+    WD["work/<br/>эпики и элементы работы"]
+    EPN[".claude/skills/epic-new<br/>создание эпика"]
+    WST[".claude/skills/work-start<br/>передача фичи в Spec Kit"]
+    WSK[".claude/skills/work<br/>доска, очередь, статус"]
     HZD["docs/architecture/hot-zones.md<br/>реестр зон"]
     WF[".specify/workflows/feature-chain/workflow.yml<br/>цепочка фичи без диалога"]
     BRK["docs/harness/bricks.md<br/>кирпичики и уровни контроля"]
@@ -178,6 +187,14 @@ flowchart TD
     TST -->|проверяет| LINT
     TST -->|проверяет| REM
     LINT -->|требует тест для каждого файла харнеса| TST
+    EPN -->|создает элементы| WK
+    WST -->|привязывает фичу| WK
+    WSK -->|читает и меняет статус| WK
+    WK -->|читает и пишет| WD
+    WK -->|выводит статус из| S
+    WST -->|запускает| SPK
+    LINT -->|запускает проверку трекера| WK
+    TST -->|проверяет| WK
     EXT -->|перед планом| HZ
     HZ -->|записывает ответ| HZD
     HZ -->|правила ask по путям зон| SET
