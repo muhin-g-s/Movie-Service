@@ -33,7 +33,10 @@ def bump(repo, part="minor"):
     elif part == "patch":
         patch += 1
     elif part == "down":
-        minor = max(minor - 1, 0)
+        if minor > 0:
+            minor -= 1
+        else:
+            major, patch = max(major - 1, 0), 0
     repo.write(CONSTITUTION, FOOTER.sub(lambda m: f"{m.group(1)}{major}.{minor}.{patch}{m.group(5)}", text, 1))
 
 
@@ -595,7 +598,8 @@ class TestStagedGuard(LintCase):
         self.detected("не больше прежней", "--staged")
 
     def test_date_only_change(self):
-        self.repo.replace(CONSTITUTION, "**Последняя поправка**: 2026-11-15", "**Последняя поправка**: 2026-11-16")
+        text = self.repo.read(CONSTITUTION)
+        self.repo.write(CONSTITUTION, re.sub(r"(\*\*Последняя поправка\*\*: )\S+", r"\g<1>2099-01-01", text, 1))
         self.stage_constitution()
         self.detected("не больше прежней", "--staged")
 
@@ -624,6 +628,14 @@ class TestModes(LintCase):
         out = self.repo.lint().stdout
         self.assertNotIn("docs-lint: AGENTS.md:", out)
         self.assertIn("docs-lint: README.md:", out)
+
+    def test_stamp_changes_only_the_marker_line(self):
+        before = self.repo.read("AGENTS.md").splitlines()
+        bump(self.repo, "minor")
+        self.assertEqual(self.repo.lint("--stamp", "AGENTS.md").returncode, 0)
+        after = self.repo.read("AGENTS.md").splitlines()
+        self.assertEqual(len(before), len(after))
+        self.assertEqual([i for i, (x, y) in enumerate(zip(before, after)) if x != y], [5])
 
     def test_constitution_cannot_be_stamped(self):
         self.assertEqual(self.repo.lint("--stamp", CONSTITUTION).returncode, 2)

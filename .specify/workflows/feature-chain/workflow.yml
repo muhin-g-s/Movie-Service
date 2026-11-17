@@ -49,6 +49,14 @@ steps:
     type: shell
     run: "python3 tools/check-feature.py plan"
 
+  - id: check-autonomy
+    type: if
+    condition: "{{ inputs.control == 'автономный' }}"
+    then:
+      - id: autonomy-allowed
+        type: shell
+        run: "python3 tools/check-feature.py autonomy"
+
   - id: gate-plan
     type: if
     condition: "{{ inputs.control == 'контрольная точка' }}"

@@ -106,6 +106,39 @@ class TestPlanStage(CheckCase):
         self.ok("plan")
 
 
+class TestAutonomyStage(CheckCase):
+    def setUp(self):
+        super().setUp()
+        self.point_to()
+
+    def plan(self, zones):
+        self.repo.write(f"{FEATURE}/plan.md", f"# План\n\n**Hot zones touched**: {zones}\n")
+
+    def test_plan_without_hot_zones_is_allowed(self):
+        self.plan("нет")
+        self.ok("autonomy")
+
+    def test_none_with_reason_is_allowed(self):
+        self.plan("нет, зоны не затронуты")
+        self.ok("autonomy")
+
+    def test_plan_touching_a_zone_forbids_autonomy(self):
+        self.plan("Платежи")
+        self.fails("autonomy", "автономный режим запрещен: Платежи")
+
+    def test_plan_without_the_field_forbids_autonomy(self):
+        self.repo.write(f"{FEATURE}/plan.md", "# План\n")
+        self.fails("autonomy", "в plan.md нет поля Hot zones touched")
+
+    def test_unfilled_template_value_forbids_autonomy(self):
+        self.plan("[zone names]")
+        self.fails("autonomy", "поле Hot zones touched не заполнено")
+
+    def test_missing_plan(self):
+        self.repo.path(FEATURE).mkdir(parents=True)
+        self.fails("autonomy", "нет файла plan.md")
+
+
 class TestTasksStages(CheckCase):
     def setUp(self):
         super().setUp()

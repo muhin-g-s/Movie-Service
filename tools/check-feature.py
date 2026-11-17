@@ -4,6 +4,7 @@
 Запуск:
     python3 tools/check-feature.py spec    есть spec.md, он не пуст, маркеров уточнения не осталось
     python3 tools/check-feature.py plan    есть plan.md, в нем актуальная Constitution version
+    python3 tools/check-feature.py autonomy в плане нет затронутых горячих зон, иначе автономный режим запрещен
     python3 tools/check-feature.py tasks   есть tasks.md и в нем есть задачи
     python3 tools/check-feature.py done    в tasks.md не осталось невыполненных задач
 
@@ -77,6 +78,21 @@ def check_plan(folder):
     return 0
 
 
+def check_autonomy(folder):
+    text = read_artifact(folder, "plan.md")
+    if text is None:
+        return fail("нет файла plan.md")
+    match = re.search(r"\*\*Hot zones touched\*\*:[ \t]*(.*)", text)
+    if not match:
+        return fail("в plan.md нет поля Hot zones touched")
+    value = match.group(1).strip()
+    if not value or value.startswith("["):
+        return fail("поле Hot zones touched не заполнено")
+    if re.match(r"нет\b", value):
+        return 0
+    return fail(f"задача затрагивает горячие зоны, автономный режим запрещен: {value}")
+
+
 def check_tasks(folder):
     text = read_artifact(folder, "tasks.md")
     if text is None:
@@ -96,7 +112,7 @@ def check_done(folder):
     return 0
 
 
-STAGES = {"spec": check_spec, "plan": check_plan, "tasks": check_tasks, "done": check_done}
+STAGES = {"spec": check_spec, "plan": check_plan, "autonomy": check_autonomy, "tasks": check_tasks, "done": check_done}
 
 
 def main():
