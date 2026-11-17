@@ -211,7 +211,7 @@ def check_principle_refs(rel, valid, errors):
 def check_backtick_paths(rel, errors):
     for token in re.findall(r"`([^`\n]+)`", strip_code(read(rel))):
         if (" " in token or "<" in token or "*" in token or "/" not in token
-                or token.startswith(("~", "http", "/", "specs/")) or token in ALLOW_MISSING_PATHS):
+                or token.startswith(("~", "http", "/", "specs/", "stage/")) or token in ALLOW_MISSING_PATHS):
             continue
         if not (ROOT / token.rstrip("/")).exists():
             errors.append((rel, f"упомянут несуществующий путь {token}"))

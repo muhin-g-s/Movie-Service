@@ -26,6 +26,9 @@
   ".claude/skills/hot-zones": [
     "evals/cases/hot-zones-asks-owner"
   ],
+  ".claude/skills/stage": [
+    "evals/cases/stage-refuses-dirty-tree"
+  ],
   ".claude/skills/work": [
     "evals/cases/work-does-not-promote-ideas"
   ],
@@ -76,6 +79,9 @@
   ],
   "tools/harvest.py": [
     "tests/harness/test_harvest.py"
+  ],
+  "tools/stage.py": [
+    "tests/harness/test_stage.py"
   ],
   "tools/work.py": [
     "tests/harness/test_work.py"

@@ -23,6 +23,7 @@
     "tools/guard-constitution.py",
     "tools/harness-eval.py",
     "tools/harvest.py",
+    "tools/stage.py",
     "tools/work.py",
     ".specify/templates/overrides/plan-template.md",
     ".specify/templates/overrides/spec-template.md",
@@ -39,6 +40,7 @@
     ".claude/skills/harness-eval",
     ".claude/skills/harvest",
     ".claude/skills/hot-zones",
+    ".claude/skills/stage",
     ".claude/skills/work",
     ".claude/skills/work-start"
   ],

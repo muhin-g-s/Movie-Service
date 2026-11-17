@@ -38,3 +38,4 @@
 | 27 | С чего начинается исправление ошибки харнеса и когда перепрогоняются сценарии поведения? | `.specify/memory/constitution.md` |
 | 28 | Где ведутся эпики и очередность работы и как узнать, какую фичу брать дальше? | `docs/harness/reference.md` или `docs/harness/capabilities.md` |
 | 29 | Как элемент трекера связан со спецификацией фичи и откуда берется статус фичи? | `docs/harness/reference.md` или `docs/decisions/0009-file-work-tracker.md` |
+| 30 | Как в истории репозитория отмечаются этапы разработки и что нужно, чтобы этап закрыть? | `docs/harness/reference.md` или `docs/decisions/0010-stage-tags.md` |
