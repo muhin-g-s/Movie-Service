@@ -55,6 +55,9 @@
     ]
   },
   "permissions": {
+    "allow": [
+      "Bash(.specify/scripts/bash/*)"
+    ],
     "ask": [
       "Edit(./.specify/memory/constitution.md)"
     ],

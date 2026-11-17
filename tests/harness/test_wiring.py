@@ -91,6 +91,7 @@ class TestHookWiring(WiringCase):
         self.assertTrue(settings["enabledPlugins"])
         self.assertTrue(all(value is False for value in settings["enabledPlugins"].values()))
         self.assertIn("Edit(./.specify/memory/constitution.md)", settings["permissions"]["ask"])
+        self.assertEqual(["Bash(.specify/scripts/bash/*)"], settings["permissions"]["allow"])
         self.assertTrue(any("--no-verify" in rule for rule in settings["permissions"]["deny"]))
         self.assertTrue(any(".env" in rule for rule in settings["permissions"]["deny"]))
 

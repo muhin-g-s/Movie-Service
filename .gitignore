@@ -5,5 +5,8 @@
 __pycache__/
 evals/results/
 
+# Состояние запусков воркфлоу Spec Kit
+.specify/workflows/runs/
+
 # Локальные настройки Claude Code
 .claude/settings.local.json
