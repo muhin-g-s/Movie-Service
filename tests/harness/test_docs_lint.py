@@ -241,6 +241,122 @@ class TestHarnessWiring(LintCase):
         self.detected("запись о несуществующем файле харнеса")
 
 
+class TestBricks(LintCase):
+    FILE = "docs/harness/bricks.md"
+
+    def mutate(self, old, new):
+        self.repo.replace(self.FILE, old, new)
+
+    @covers("check_bricks")
+    def test_missing_catalog(self):
+        self.repo.path(self.FILE).unlink()
+        self.detected("нет каталога кирпичиков")
+
+    def test_unknown_skill_in_executor(self):
+        self.mutate("| `speckit-plan` |", "| `speckit-nope` |")
+        self.detected("несуществующий скилл speckit-nope")
+
+    def test_duplicate_brick_name(self):
+        self.mutate("| `tasks` |", "| `plan` |")
+        self.detected("повторяется имя кирпичика plan")
+
+    def test_brick_name_must_be_identifier(self):
+        self.mutate("| `tasks` |", "| Tasks |")
+        self.detected("имя кирпичика должно быть в обратных кавычках")
+
+    def test_unknown_control_level(self):
+        self.mutate("| `docs-sync` | обновляет документацию и метки, запускает проверку | `docs-sync` | - | нет | автономный,",
+                    "| `docs-sync` | обновляет документацию и метки, запускает проверку | `docs-sync` | - | нет | свободный,")
+        self.detected("неизвестный уровень контроля свободный")
+
+    def test_dialog_brick_cannot_be_autonomous(self):
+        self.mutate("| да | контрольная точка, сопровождение | создан файл `spec.md` фичи",
+                    "| да | автономный, контрольная точка | создан файл `spec.md` фичи")
+        self.detected("диалоговый кирпичик specify не может быть автономным")
+
+    def test_dialog_value_is_checked(self):
+        self.mutate("| `speckit-clarify` | - | да |", "| `speckit-clarify` | - | возможно |")
+        self.detected("диалог должен быть да или нет")
+
+    def test_working_brick_needs_executor(self):
+        self.mutate("| `speckit-tasks` |", "| - |")
+        self.detected("кирпичик tasks работает, но исполнитель не указан")
+
+    def test_brick_without_executor_status_cannot_name_one(self):
+        self.mutate("| `find-pattern` | ищет образец реализации в каталоге образцов | - |",
+                    "| `find-pattern` | ищет образец реализации в каталоге образцов | `capture` |")
+        self.detected("кирпичик find-pattern без исполнителя, но исполнитель указан")
+
+    def test_status_value_is_checked(self):
+        self.mutate("| тесты проходят | работает |", "| тесты проходят | готово |")
+        self.detected("неизвестный статус готово")
+
+    def test_wrong_columns(self):
+        self.mutate("| Статус |", "| Состояние |")
+        self.detected("со столбцами каталога кирпичиков")
+
+    def test_row_with_wrong_cell_count(self):
+        self.mutate("| не определена | нет исполнителя |\n| `tasks`", "| не определена |\n| `tasks`")
+        self.detected("число ячеек")
+
+    def test_levels_table_is_required(self):
+        self.mutate("| автономный | агент выполняет шаг сам, владелец смотрит итог |\n", "")
+        self.detected("неизвестный уровень контроля автономный")
+
+
+class TestWorkflows(LintCase):
+    FILE = ".specify/workflows/feature-chain/workflow.yml"
+
+    def mutate(self, old, new):
+        self.repo.replace(self.FILE, old, new)
+
+    @covers("check_workflows")
+    def test_command_step_must_be_a_brick(self):
+        self.mutate("  - id: plan\n", "  - id: planning\n")
+        self.detected("шаг команды planning не найден в каталоге кирпичиков")
+
+    def test_dialog_brick_cannot_be_in_the_chain(self):
+        self.mutate("  - id: tasks\n    command: speckit.tasks", "  - id: clarify\n    command: speckit.tasks")
+        self.detected("диалоговый кирпичик clarify нельзя ставить в цепочку")
+
+    def test_brick_without_executor_cannot_be_in_the_chain(self):
+        self.mutate("  - id: tasks\n    command: speckit.tasks", "  - id: find-pattern\n    command: speckit.tasks")
+        self.detected("кирпичик find-pattern без исполнителя нельзя ставить в цепочку")
+
+    def test_unknown_command_skill(self):
+        self.mutate("command: speckit.plan", "command: speckit.nope")
+        self.detected("команда speckit.nope не соответствует скиллу speckit-nope")
+
+    def test_unknown_prompt_skill(self):
+        self.mutate('prompt: "/docs-sync"', 'prompt: "/docs-nope"')
+        self.detected("команда docs-nope не соответствует скиллу docs-nope")
+
+    def test_command_step_needs_a_check_after_it(self):
+        self.mutate("  - id: check-plan\n    type: shell\n    run: \"python3 tools/check-feature.py plan\"\n\n", "")
+        self.detected("после шага команды plan нет проверки результата")
+
+    def test_check_must_be_a_shell_step(self):
+        self.mutate("  - id: check-plan\n    type: shell", "  - id: check-plan\n    type: gate")
+        self.detected("после шага команды plan нет проверки результата")
+
+    def test_shell_step_calls_missing_tool(self):
+        self.mutate("tools/check-feature.py spec", "tools/check-nothing.py spec")
+        self.detected("вызывает несуществующий файл tools/check-nothing.py")
+
+    def test_unknown_control_level_in_condition(self):
+        self.mutate("inputs.control == 'контрольная точка' }}\"\n    then:\n      - id: review-plan",
+                    "inputs.control == 'свободный' }}\"\n    then:\n      - id: review-plan")
+        self.detected("неизвестный уровень контроля свободный")
+
+    def test_unknown_default_control_level(self):
+        self.mutate('default: "контрольная точка"', 'default: "свободный"')
+        self.detected("неизвестный уровень контроля свободный")
+
+    def test_bundled_speckit_workflow_is_not_checked(self):
+        self.clean()
+        self.assertNotIn("speckit/workflow.yml", self.repo.lint().stdout)
+
+
 class TestConstitutionAndTemplates(LintCase):
     @covers("check_constitution")
     def test_invalid_date(self):

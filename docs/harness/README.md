@@ -1,7 +1,7 @@
 # Харнес
 
 > **Отвечает за:** границу между харнесом и продуктом, состав зон репозитория и навигацию по документации харнеса.
-> **Не содержит:** возможностей ([capabilities.md](capabilities.md)), устройства и зависимостей ([infrastructure.md](infrastructure.md)), команд и справочника ([reference.md](reference.md)), гейтов ([quality-gates.md](quality-gates.md)).
+> **Не содержит:** возможностей ([capabilities.md](capabilities.md)), устройства и зависимостей ([infrastructure.md](infrastructure.md)), команд и справочника ([reference.md](reference.md)), гейтов ([quality-gates.md](quality-gates.md)), кирпичиков воркфлоу ([bricks.md](bricks.md)).
 > **Читать когда:** работаете над харнесом или не уверены, к какой зоне относится файл.
 > **Проверено при версии конституции:** 2.4.1
 
@@ -53,6 +53,7 @@
 | [infrastructure.md](infrastructure.md) | компоненты, зависимости, схема связей, потоки, состояние, точки отказа |
 | [reference.md](reference.md) | справочник: как запускать скиллы, скрипты, тесты, настройки хуков |
 | [quality-gates.md](quality-gates.md) | гейты качества, чем они реализованы, пример запуска в CI |
+| [bricks.md](bricks.md) | кирпичики воркфлоу и уровни контроля шага |
 
 ## С чего начать
 

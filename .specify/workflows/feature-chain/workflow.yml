@@ -1,0 +1,109 @@
+schema_version: "1.0"
+workflow:
+  id: "feature-chain"
+  name: "Цепочка фичи без диалога"
+  version: "0.1.0"
+  author: "movie-service"
+  description: "От утвержденной спецификации до реализации: план, задачи, реализация, синхронизация документов. После каждого шага команды стоит проверка результата"
+
+requires:
+  speckit_version: ">=0.8.5"
+  integrations:
+    any:
+      - "claude"
+
+inputs:
+  spec:
+    type: string
+    required: true
+    prompt: "Описание фичи, как в спецификации"
+  control:
+    type: string
+    default: "контрольная точка"
+    prompt: "Уровень контроля: автономный или контрольная точка. Сопровождение в цепочке невозможно, оно ведется в сессии"
+  integration:
+    type: string
+    default: "auto"
+    prompt: "Интеграция, auto берет ту, с которой инициализирован проект"
+
+steps:
+  - id: control-supervised-refused
+    type: if
+    condition: "{{ inputs.control == 'сопровождение' }}"
+    then:
+      - id: control-refuse
+        type: shell
+        run: "echo 'уровень сопровождение ведется в сессии, не в цепочке' >&2; exit 1"
+
+  - id: check-spec
+    type: shell
+    run: "python3 tools/check-feature.py spec"
+
+  - id: plan
+    command: speckit.plan
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+
+  - id: check-plan
+    type: shell
+    run: "python3 tools/check-feature.py plan"
+
+  - id: gate-plan
+    type: if
+    condition: "{{ inputs.control == 'контрольная точка' }}"
+    then:
+      - id: review-plan
+        type: gate
+        message: "Проверьте план перед созданием задач."
+        options: [approve, reject]
+        on_reject: abort
+
+  - id: tasks
+    command: speckit.tasks
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+
+  - id: check-tasks
+    type: shell
+    run: "python3 tools/check-feature.py tasks"
+
+  - id: gate-tasks
+    type: if
+    condition: "{{ inputs.control == 'контрольная точка' }}"
+    then:
+      - id: review-tasks
+        type: gate
+        message: "Проверьте задачи перед реализацией."
+        options: [approve, reject]
+        on_reject: abort
+
+  - id: implement
+    command: speckit.implement
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+
+  - id: check-done
+    type: shell
+    run: "python3 tools/check-feature.py done"
+
+  - id: docs-sync
+    type: prompt
+    prompt: "/docs-sync"
+    integration: "{{ inputs.integration }}"
+
+  - id: check-docs
+    type: shell
+    run: "python3 tools/docs-lint.py"
+
+  - id: gate-result
+    type: if
+    condition: "{{ inputs.control == 'контрольная точка' }}"
+    then:
+      - id: review-result
+        type: gate
+        message: "Проверьте результат реализации и синхронизацию документов."
+        options: [approve, reject]
+        on_reject: abort

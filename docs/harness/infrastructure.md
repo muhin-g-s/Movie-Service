@@ -40,7 +40,7 @@
 |---|---|---|---|
 | `docs/README.md` | конституция | `docs-lint` проверяет карту, агенты ищут владельцев | ничего |
 | `docs/decisions/README.md` | конституция | `docs-lint` требует ссылку на реестр, агенты проверяют отложенные темы | ничего |
-| `docs/harness/` | файлы харнеса | `docs-lint` проверяет схему и описание | ничего |
+| `docs/harness/` | файлы харнеса | `docs-lint` проверяет схему и описание, каталог кирпичиков `bricks.md` проверяется отдельно | ничего |
 
 ### Spec Kit
 
@@ -50,6 +50,7 @@
 | `.specify/scripts/bash/` | шаблоны, git | скиллы `speckit-*` | git |
 | `.specify/templates/` и `.specify/templates/overrides/` | ничего | `resolve-template.sh` по стеку: проект, пресеты, расширения, ядро | ничего |
 | `.specify/extensions.yml` | скиллы проекта | скиллы `speckit-*`, `docs-lint` проверяет соответствие команд скиллам | `docs-sync` и `audit` через скиллы Spec Kit |
+| `.specify/workflows/feature-chain/workflow.yml` | скиллы `speckit-*`, `docs-sync`, `tools/check-feature.py`, `tools/docs-lint.py`, каталог кирпичиков | `specify workflow run feature-chain`, `docs-lint` сверяет с каталогом | скиллы командами шагов, проверки шагами shell |
 
 ### Скиллы проекта
 
@@ -69,6 +70,7 @@
 | `tools/docs-lint.py` | все документы, `.claude/settings.json`, `.specify/extensions.yml`, шаблоны и патчи, `tests/harness/coverage.json`, git | git-хук, хуки Claude Code, скиллы `docs-sync`, `capture`, `audit`, `harness-eval`, тесты, пользователь | git, diff, patch |
 | `tools/guard-constitution.py` | данные хука | хук PreToolUse | ничего |
 | `tools/capture-reminder.py` | данные хука, состояние в папке проекта | хуки Stop, SessionEnd, PreCompact, SessionStart, скиллы очищают | ничего |
+| `tools/check-feature.py` | `.specify/feature.json`, артефакты фичи в `specs/`, версия конституции из `tools/docs-lint.py` | шаги shell цепочки `feature-chain`, пользователь | ничего |
 | `tools/harvest.py` | расшифровки и память в папке проекта, документы репозитория | скилл `harvest` | ничего |
 | `tools/harness-eval.py` | `claude`, сценарии, вопросы `cold-start` | скилл `harness-eval`, пользователь | `claude -p`, git |
 
@@ -121,6 +123,9 @@ flowchart TD
     EV["evals/cases<br/>сценарии поведения"]
     HE["tools/harness-eval.py<br/>запуск сценариев"]
     HSK[".claude/skills/harness-eval<br/>ручной прогон сценариев"]
+    CHK["tools/check-feature.py<br/>проверка артефактов фичи"]
+    WF[".specify/workflows/feature-chain/workflow.yml<br/>цепочка фичи без диалога"]
+    BRK["docs/harness/bricks.md<br/>кирпичики и уровни контроля"]
 
     C ==> A ==> CL
     C ==> CR
@@ -170,6 +175,13 @@ flowchart TD
     TST -->|проверяет| LINT
     TST -->|проверяет| REM
     LINT -->|требует тест для каждого файла харнеса| TST
+    WF -->|команды шагов| SPK
+    WF -->|после каждого шага проверка| CHK
+    WF -->|шаги берутся из| BRK
+    CHK -->|читает| S
+    LINT -->|проверяет каталог| BRK
+    LINT -->|сверяет цепочку с каталогом| WF
+    TST -->|проверяет| CHK
 ```
 
 - Жирная стрелка `A ==> B`: B опирается на A и не может ему противоречить.
@@ -269,6 +281,7 @@ flowchart TD
 | старые расшифровки удалены, срок не проверен | знания из чата потеряны безвозвратно | напоминание о неразобранной сессии | разобирать напоминание вовремя |
 | git-хук не включен в клоне | нарушения попадают в коммит | старт сессии Claude Code включает его, чужие клоны нет | выполнить настройку клона, CI отложен |
 | коммит с `--no-verify` | проверка пропущена | CI нет | дисциплина, CI в реестре |
+| шаг цепочки остановился на правах или вопросе агента | движок считает его успехом, проверка шага не пройдена и запуск падает с кодом возврата проверки | сообщение о провале шага check-... без причины, причину показывает вывод проверки при запуске вручную | запустить проверку вручную, продолжить командой `specify workflow resume` |
 | слабая модель | нарушает принципы I и IX, теряет решения | сценарии поведения | использовать рабочую модель |
 | обновление OMC или Claude Code | поведение и формат данных меняются | тесты и сценарии | перепрогнать после обновления |
 | нет `diff` или `patch` | проверка шаблонов падает | сообщение проверки документации | установить утилиты |

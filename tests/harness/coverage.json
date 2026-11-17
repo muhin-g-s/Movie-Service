@@ -38,8 +38,14 @@
   ".specify/templates/overrides/tasks-template.patch": [
     "tests/harness/test_docs_lint.py"
   ],
+  ".specify/workflows/feature-chain/workflow.yml": [
+    "tests/harness/test_docs_lint.py"
+  ],
   "tools/capture-reminder.py": [
     "tests/harness/test_capture_reminder.py"
+  ],
+  "tools/check-feature.py": [
+    "tests/harness/test_check_feature.py"
   ],
   "tools/docs-lint.py": [
     "tests/harness/test_docs_lint.py"

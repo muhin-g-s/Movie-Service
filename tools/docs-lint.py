@@ -23,6 +23,7 @@ CONSTITUTION = ".specify/memory/constitution.md"
 MAP_FILE = "docs/README.md"
 REFERENCE_FILE = "docs/harness/reference.md"
 INFRA_FILE = "docs/harness/infrastructure.md"
+BRICKS_FILE = "docs/harness/bricks.md"
 ADR_GLOB = "docs/decisions/[0-9][0-9][0-9][0-9]-*.md"
 REGISTRY = "docs/decisions/README.md"
 REGISTRY_ANCHOR = "отложенные-решения"
@@ -31,6 +32,8 @@ OVERRIDES = ".specify/templates/overrides"
 EXTENSIONS = ".specify/extensions.yml"
 OVERRIDE_TASKS = ".specify/templates/overrides/tasks-template.md"
 SETTINGS = ".claude/settings.json"
+WORKFLOWS_GLOB = ".specify/workflows/*/workflow.yml"
+BUNDLED_WORKFLOWS = {"speckit"}
 SKILLS_DIR = ".claude/skills"
 COVERAGE = "tests/harness/coverage.json"
 # длинное и среднее тире, ё, Ё, угловые кавычки, стрелка, многоточие одним символом
@@ -40,8 +43,11 @@ FRESH_PREFIX = "> **Проверено при версии конституци�
 FRESH_RE = re.compile(r"^> \*\*Проверено при версии конституции:\*\* (\d+)\.(\d+)\.(\d+)\s*$", re.M)
 PLAN_RE = re.compile(r"\*\*Constitution version\*\*:\s*(\d+)\.(\d+)\.(\d+)")
 PRINCIPLE_REF = re.compile(r"(?i:принцип)\w*\s+(\b[IVX]+\b(?:(?:\s*,\s*|\s+и\s+|\s*-\s*)\b[IVX]+\b)*)")
+BRICK_COLUMNS = ["Кирпичик", "Что делает", "Исполнитель", "Роль OMC", "Диалог", "Уровни контроля",
+                 "Проверка результата", "Статус"]
+LEVEL_COLUMNS = ["Уровень", "Что значит"]
 ALLOWED_PLUGINS = {"oh-my-claudecode@omc"}
-ALLOW_MISSING_PATHS = {".omc/"}
+ALLOW_MISSING_PATHS = {".omc/", ".specify/feature.json"}
 FOOTER = re.compile(
     r"^\*\*Версия\*\*: (\d+)\.(\d+)\.(\d+) \| \*\*Ратифицирована\*\*: (\S+) \| \*\*Последняя поправка\*\*: (\S+)$",
     re.M,
@@ -203,11 +209,18 @@ def check_backtick_paths(rel, errors):
 
 # ---------- проверки связей харнеса ----------
 
+def project_workflows():
+    """Воркфлоу проекта, без поставляемого вместе со Spec Kit."""
+    return sorted(str(p.relative_to(ROOT)) for p in ROOT.glob(WORKFLOWS_GLOB)
+                  if p.parent.name not in BUNDLED_WORKFLOWS)
+
+
 def harness_files():
     """Файлы харнеса, которые должны быть показаны на схеме связей и описаны в руководстве."""
     found = [SETTINGS, EXTENSIONS]
     for pattern in (".githooks/*", "tools/*.py", ".specify/templates/overrides/*.md", ".specify/templates/overrides/*.patch"):
         found += sorted(str(p.relative_to(ROOT)) for p in ROOT.glob(pattern) if p.is_file())
+    found += project_workflows()
     if (ROOT / SKILLS_DIR).is_dir():
         found += sorted(str(p.parent.relative_to(ROOT)) for p in (ROOT / SKILLS_DIR).glob("*/SKILL.md")
                         if not p.parent.name.startswith("speckit-"))
@@ -294,6 +307,139 @@ def check_map(files, errors):
             continue
         if rel not in mapped:
             errors.append((rel, "файла нет в карте источников истины docs/README.md"))
+
+
+def md_table(rel, heading):
+    """Первая таблица под заголовком: (столбцы, строки) или None. Строка это список ячеек."""
+    lines = strip_code(read(rel)).splitlines()
+    start = next((i for i, line in enumerate(lines) if re.fullmatch(r"#{1,6}\s+" + re.escape(heading) + r"\s*", line)), None)
+    if start is None:
+        return None
+    rows = []
+    for line in lines[start + 1:]:
+        if line.startswith("#"):
+            break
+        if line.startswith("|"):
+            rows.append([cell.strip() for cell in line.strip().strip("|").split("|")])
+        elif rows:
+            break
+    if len(rows) < 2:
+        return None
+    return rows[0], rows[2:]
+
+
+def check_bricks(errors):
+    if not (ROOT / BRICKS_FILE).exists():
+        errors.append((BRICKS_FILE, "нет каталога кирпичиков"))
+        return
+    levels = md_table(BRICKS_FILE, "Уровни контроля")
+    if not levels or levels[0] != LEVEL_COLUMNS:
+        errors.append((BRICKS_FILE, "нет таблицы уровней контроля со столбцами " + ", ".join(LEVEL_COLUMNS)))
+        known_levels = set()
+    else:
+        known_levels = {row[0] for row in levels[1] if row}
+    catalog = md_table(BRICKS_FILE, "Каталог кирпичиков")
+    if not catalog or catalog[0] != BRICK_COLUMNS:
+        errors.append((BRICKS_FILE, "нет таблицы со столбцами каталога кирпичиков: " + ", ".join(BRICK_COLUMNS)))
+        return
+    seen = set()
+    for row in catalog[1]:
+        if len(row) != len(BRICK_COLUMNS):
+            errors.append((BRICKS_FILE, f"число ячеек в строке {row[0]!r} не равно числу столбцов"))
+            continue
+        cell = dict(zip(BRICK_COLUMNS, row))
+        match = re.fullmatch(r"`([a-z][a-z0-9-]*)`", cell["Кирпичик"])
+        if not match:
+            errors.append((BRICKS_FILE, f"имя кирпичика должно быть в обратных кавычках латиницей: {cell['Кирпичик']}"))
+            continue
+        name = match.group(1)
+        if name in seen:
+            errors.append((BRICKS_FILE, f"повторяется имя кирпичика {name}"))
+        seen.add(name)
+        executor = cell["Исполнитель"]
+        for skill in re.findall(r"`([^`]+)`", executor):
+            if not (ROOT / SKILLS_DIR / skill / "SKILL.md").exists():
+                errors.append((BRICKS_FILE, f"кирпичик {name}: несуществующий скилл {skill}"))
+        if cell["Диалог"] not in ("да", "нет"):
+            errors.append((BRICKS_FILE, f"кирпичик {name}: диалог должен быть да или нет"))
+        listed = [item.strip() for item in cell["Уровни контроля"].split(",") if item.strip()]
+        if not listed:
+            errors.append((BRICKS_FILE, f"кирпичик {name}: не указаны уровни контроля"))
+        for level in listed:
+            if level not in known_levels:
+                errors.append((BRICKS_FILE, f"кирпичик {name}: неизвестный уровень контроля {level}"))
+        if cell["Диалог"] == "да" and "автономный" in listed:
+            errors.append((BRICKS_FILE, f"диалоговый кирпичик {name} не может быть автономным"))
+        if not cell["Проверка результата"] or cell["Проверка результата"] == "-":
+            errors.append((BRICKS_FILE, f"кирпичик {name}: не указана проверка результата"))
+        status = cell["Статус"]
+        if status == "работает":
+            if executor in ("", "-"):
+                errors.append((BRICKS_FILE, f"кирпичик {name} работает, но исполнитель не указан"))
+        elif status == "нет исполнителя":
+            if executor not in ("", "-"):
+                errors.append((BRICKS_FILE, f"кирпичик {name} без исполнителя, но исполнитель указан"))
+        else:
+            errors.append((BRICKS_FILE, f"кирпичик {name}: неизвестный статус {status}"))
+
+
+def workflow_steps(text):
+    """Шаги верхнего уровня воркфлоу: список (id, тип, команда, текст шага)."""
+    parts = re.split(r"(?m)^  - id: ", text)[1:]
+    steps = []
+    for part in parts:
+        step_id = part.split("\n", 1)[0].strip()
+        type_match = re.search(r"(?m)^    type: (\S+)", part)
+        command_match = re.search(r"(?m)^    command: (\S+)", part)
+        prompt_match = re.search(r'(?m)^    prompt: "/([\w-]+)', part)
+        step_type = type_match.group(1) if type_match else ""
+        if command_match:
+            command = command_match.group(1)
+        elif step_type == "prompt" and prompt_match:
+            command = prompt_match.group(1)
+        else:
+            command = ""
+        steps.append((step_id, step_type, command, part))
+    return steps
+
+
+def check_workflows(errors):
+    bricks = md_table(BRICKS_FILE, "Каталог кирпичиков") if (ROOT / BRICKS_FILE).exists() else None
+    levels = md_table(BRICKS_FILE, "Уровни контроля") if (ROOT / BRICKS_FILE).exists() else None
+    catalog = {}
+    if bricks and bricks[0] == BRICK_COLUMNS:
+        for row in bricks[1]:
+            if len(row) == len(BRICK_COLUMNS):
+                catalog[row[0].strip("`")] = dict(zip(BRICK_COLUMNS, row))
+    known_levels = {row[0] for row in levels[1] if row} if levels else set()
+    for rel in project_workflows():
+        text = read(rel)
+        steps = workflow_steps(text)
+        for index, (step_id, step_type, command, body) in enumerate(steps):
+            if command:
+                brick = catalog.get(step_id)
+                if brick is None:
+                    errors.append((rel, f"шаг команды {step_id} не найден в каталоге кирпичиков"))
+                elif brick["Статус"] != "работает":
+                    errors.append((rel, f"кирпичик {step_id} без исполнителя нельзя ставить в цепочку"))
+                elif brick["Диалог"] == "да":
+                    errors.append((rel, f"диалоговый кирпичик {step_id} нельзя ставить в цепочку без диалога"))
+                skill = command.replace(".", "-")
+                if not (ROOT / SKILLS_DIR / skill / "SKILL.md").exists():
+                    errors.append((rel, f"шаг {step_id}: команда {command} не соответствует скиллу {skill}"))
+                following = steps[index + 1] if index + 1 < len(steps) else None
+                if not following or following[1] != "shell" or not following[0].startswith("check-"):
+                    errors.append((rel, f"после шага команды {step_id} нет проверки результата (шаг shell с именем check-...)"))
+            for tool in re.findall(r"\btools/[\w.-]+", body):
+                if step_type == "shell" and not (ROOT / tool).exists():
+                    errors.append((rel, f"шаг {step_id} вызывает несуществующий файл {tool}"))
+        used = set(re.findall(r"inputs\.control == '([^']+)'", text))
+        default = re.search(r'(?ms)^  control:.*?^    default: "([^"]+)"', text)
+        if default:
+            used.add(default.group(1))
+        for level in sorted(used):
+            if level not in known_levels:
+                errors.append((rel, f"неизвестный уровень контроля {level}"))
 
 
 def check_constitution(errors):
@@ -426,6 +572,8 @@ def run_checks(staged):
         check_harness_documented(errors)
     if (ROOT / CONSTITUTION).exists():
         check_constitution(errors)
+    check_bricks(errors)
+    check_workflows(errors)
     check_wiring(errors)
     check_test_coverage(errors)
     check_override(errors)
