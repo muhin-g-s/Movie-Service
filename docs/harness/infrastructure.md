@@ -63,6 +63,7 @@
 | `.claude/skills/cold-start` | `.claude/skills/cold-start/questions.md` | пользователь | отдельный агент Explore |
 | `.claude/skills/epic-new` | трекер работы, реестр отложенных решений, `docs/harness/bricks.md` | пользователь | `tools/work.py`, инструмент AskUserQuestion |
 | `.claude/skills/work-start` | трекер работы, скилл `speckit-specify` | пользователь | `tools/work.py`, `/speckit-specify` |
+| `.claude/skills/decide` | трекер работы, реестр отложенных решений, конституция, ADR | пользователь | `tools/work.py`, `tools/adr.py`, `/speckit-constitution`, агенты-исследователи |
 | `.claude/skills/stage` | теги этапов в git, трекер работы | пользователь | `tools/stage.py`, `tools/work.py` |
 | `.claude/skills/work` | трекер работы | пользователь | `tools/work.py` |
 | `.claude/skills/hot-zones` | реестр зон, спецификация и план фичи | хук Spec Kit перед планом, пользователь | инструмент AskUserQuestion, `tools/docs-lint.py` |
@@ -75,6 +76,7 @@
 | `tools/docs-lint.py` | все документы, `.claude/settings.json`, `.specify/extensions.yml`, шаблоны и патчи, `tests/harness/coverage.json`, git | git-хук, хуки Claude Code, скиллы `docs-sync`, `capture`, `audit`, `harness-eval`, тесты, пользователь | git, diff, patch |
 | `tools/guard-constitution.py` | данные хука | хук PreToolUse | ничего |
 | `tools/capture-reminder.py` | данные хука, состояние в папке проекта | хуки Stop, SessionEnd, PreCompact, SessionStart, скиллы очищают | ничего |
+| `tools/adr.py` | `docs/decisions/`, конституция для метки версии | скилл `decide`, пользователь | ничего |
 | `tools/stage.py` | git, `tools/docs-lint.py`, `tools/work.py`, тесты харнеса при флаге | скилл `stage`, пользователь | git, `tools/docs-lint.py`, команда тестов |
 | `tools/work.py` | файлы в `work/`, каталоги в `specs/`, `tools/docs-lint.py` для уровней контроля | скиллы `epic-new`, `work-start`, `work`, `tools/docs-lint.py` и git-хук проверяют, пользователь | ничего |
 | `tools/check-feature.py` | `.specify/feature.json`, артефакты фичи в `specs/`, версия конституции из `tools/docs-lint.py` | шаги shell цепочки `feature-chain`, пользователь | ничего |
@@ -134,6 +136,8 @@ flowchart TD
     HZ[".claude/skills/hot-zones<br/>опрос о горячих зонах"]
     WK["tools/work.py<br/>трекер работы"]
     STG["tools/stage.py<br/>этапы разработки"]
+    ADRT["tools/adr.py<br/>создание и принятие ADR"]
+    DEC[".claude/skills/decide<br/>проведение решения"]
     STS[".claude/skills/stage<br/>разметка этапов"]
     WD["work/<br/>эпики и элементы работы"]
     EPN[".claude/skills/epic-new<br/>создание эпика"]
@@ -191,6 +195,11 @@ flowchart TD
     TST -->|проверяет| LINT
     TST -->|проверяет| REM
     LINT -->|требует тест для каждого файла харнеса| TST
+    DEC -->|создает и принимает ADR| ADRT
+    DEC -->|закрывает элемент| WK
+    DEC -->|поправка стека и принципов| SPK
+    TST -->|проверяет| ADRT
+    ADRT -->|добавляет строку указателя| DC
     STS -->|запускает| STG
     STG -->|проверяет готовность| LINT
     STG -->|проверяет эпики| WK

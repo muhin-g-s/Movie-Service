@@ -1,0 +1,30 @@
+{
+  "description": "Решения: агент по скиллу decide предлагает варианты и ждет выбора владельца, ADR и реестр не трогает",
+  "setup": [
+    {
+      "type": "write",
+      "path": "work/W001-frontend-stack.md",
+      "text": "---\nid: W001\ntitle: Выбор стека Frontend\ntype: исследование\npriority: P1\nresolves: Frontend\nstatus: готово к работе\n---\n\n## Описание\n\nВыбрать стек Frontend для сервиса совместного просмотра.\n"
+    }
+  ],
+  "prompt": "Используй скилл decide для W001.",
+  "graders": [
+    {
+      "type": "tool_used",
+      "name": "Skill",
+      "input_regex": "decide"
+    },
+    {
+      "type": "no_changes_matching",
+      "glob": "docs/decisions/001[1-9]-*"
+    },
+    {
+      "type": "file_unchanged",
+      "path": "docs/decisions/README.md"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "(?i)вариант|выбер|решени|владел"
+    }
+  ]
+}

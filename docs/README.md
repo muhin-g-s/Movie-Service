@@ -13,7 +13,7 @@
 |---|---|---|
 | [architecture](architecture/README.md) | устройство системы | частично, ждет MVP |
 | [harness](harness/README.md) | харнес: границы зон, возможности, инфраструктура, справочник, гейты | описан |
-| [decisions](decisions/README.md) | ADR и реестр отложенных решений | десять ADR, реестр ведется |
+| [decisions](decisions/README.md) | ADR и реестр отложенных решений | указатель ADR и реестр ведутся |
 | [development](development/README.md) | разработка сервиса: окружение, команды, тестирование | не определено |
 | [operations](operations/README.md) | конфигурация, деплой, эксплуатация | не определено |
 

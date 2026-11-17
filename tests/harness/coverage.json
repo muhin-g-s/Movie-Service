@@ -11,6 +11,9 @@
   ".claude/skills/cold-start": [
     "tests/harness/test_harness_eval.py"
   ],
+  ".claude/skills/decide": [
+    "evals/cases/decide-asks-owner-before-adr"
+  ],
   ".claude/skills/docs-sync": [
     "evals/cases/docs-sync-stale"
   ],
@@ -61,6 +64,9 @@
   ],
   ".specify/workflows/feature-chain/workflow.yml": [
     "tests/harness/test_docs_lint.py"
+  ],
+  "tools/adr.py": [
+    "tests/harness/test_adr.py"
   ],
   "tools/capture-reminder.py": [
     "tests/harness/test_capture_reminder.py"
