@@ -7,10 +7,14 @@
     python3 tools/work.py show W003                  один элемент с выведенным статусом
     python3 tools/work.py new --type ТИП --title НАЗВАНИЕ --slug имя [--parent W001] [--depends W002,W003]
                               [--kind ВИД] [--priority P2] [--control УРОВЕНЬ] [--status СТАТУС] [--body ТЕКСТ]
+                              [--result ПУТЬ] [--resolves "тема реестра; другая тема"]
     python3 tools/work.py link W003 specs/003-имя    привязать элемент-фичу к каталогу фичи Spec Kit
-    python3 tools/work.py set W003 --status СТАТУС   поменять ручной статус элемента
+    python3 tools/work.py set W003 [--status СТАТУС] [--result ПУТЬ]   поменять ручной статус или результат
     python3 tools/work.py check                      проверить связность трекера и связь со specs/
 
+Поле result (путь к ADR или документу) есть у исследования, задачи, бага, инцидента и харнеса, готовое исследование
+обязано его иметь. Поле resolves называет темы реестра отложенных решений через точку с запятой: пока элемент не готов,
+тема в реестре обязана быть, когда готов, ее обязаны удалить из реестра.
 Статус фичи со spec не хранится, а выводится из артефактов Spec Kit. Статус эпика выводится из его элементов.
 Код возврата: 0 успех, 1 нарушения проверки, 2 неверный вызов.
 """
@@ -27,6 +31,8 @@ PRIORITIES = ("P1", "P2", "P3")
 STATUSES = ("идея", "готово к работе", "в работе", "заблокировано", "готово", "отменено")
 KEPT_WITH_SPEC = ("отменено", "заблокировано")
 STRICT_KINDS = ("исследовательский", "фундамент")
+RESULT_TYPES = ("исследование", "задача", "баг", "инцидент", "харнес")
+REGISTRY = "docs/decisions/README.md"
 ID_RE = re.compile(r"W\d{3,}")
 SLUG_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 TASK_RE = re.compile(r"^\s*- \[( |x|X)\] T\d+", re.M)
@@ -154,6 +160,30 @@ def find_cycle(edges, start):
     return None
 
 
+def check_results(items, by_id, found):
+    """Поля result и resolves: результат лежит в файле, тема реестра закрыта вместе с элементом."""
+    children = index(items)[1]
+    topics = registry_topics()
+    for item in items:
+        rel, kind_type, result = item.rel, item.get("type"), item.get("result")
+        if result and kind_type not in RESULT_TYPES:
+            found.append((rel, "result допустим только у исследования, задачи, бага, инцидента и харнеса"))
+        status = base(effective_status(item, by_id, children))
+        if status == "готово" and kind_type in RESULT_TYPES:
+            if not result and kind_type == "исследование":
+                found.append((rel, "у готового исследования нужен result"))
+            elif result and not (ROOT / result).is_file():
+                found.append((rel, f"файл result не найден: {result}"))
+        resolves = [t.strip() for t in item.get("resolves").split(";") if t.strip()]
+        if not resolves or topics is None or status == "отменено":
+            continue
+        for topic in resolves:
+            if status == "готово" and topic in topics:
+                found.append((rel, f"строка осталась в реестре отложенных решений: {topic}"))
+            elif status != "готово" and topic not in topics:
+                found.append((rel, f"строки нет в реестре отложенных решений: {topic}"))
+
+
 def problems(levels=None):
     """Нарушения трекера: список (путь, сообщение). levels это допустимые уровни контроля, None отключает проверку."""
     items, found = load_items()
@@ -219,6 +249,7 @@ def problems(levels=None):
             pass
         elif not item.get("status"):
             bad("нужен ручной статус, у элемента нет spec")
+    check_results(items, by_id, found)
     dep_edges = {i.ident: [d for d in i.depends if d in by_id and d != i.ident] for i in items}
     parent_edges = {i.ident: [i.get("parent")] for i in items if i.get("parent") in by_id}
     for label, edges in (("зависимостей", dep_edges), ("родителей", parent_edges)):
@@ -234,6 +265,22 @@ def problems(levels=None):
         if rel not in owners:
             found.append((rel, f"фича {rel} не привязана к элементу work/, создайте элемент и выполните link"))
     return found
+
+
+def registry_topics():
+    """Темы реестра отложенных решений или None, если реестра нет."""
+    path = ROOT / REGISTRY
+    if not path.is_file():
+        return None
+    topics, inside = set(), False
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("## "):
+            inside = line.strip() == "## Отложенные решения"
+        elif inside and line.startswith("| "):
+            cell = line.split("|")[1].strip()
+            if cell and cell != "Тема" and not set(cell) <= {"-", " "}:
+                topics.add(cell)
+    return topics
 
 
 def lint_levels():
@@ -315,7 +362,8 @@ def cmd_show(args):
     print(f"id: {item.ident}\nзаголовок: {item.get('title')}\nтип: {item.get('type')}")
     print(f"статус: {effective_status(item, by_id, children)}")
     for key, label in (("parent", "эпик"), ("depends", "зависит от"), ("kind", "вид"), ("priority", "приоритет"),
-                       ("control", "контроль"), ("spec", "spec")):
+                       ("control", "контроль"), ("spec", "spec"), ("resolves", "решает"),
+                       ("result", "результат")):
         if item.get(key):
             print(f"{label}: {item.get(key)}")
     print()
@@ -324,7 +372,7 @@ def cmd_show(args):
 
 
 def render(fields, body):
-    order = ["id", "title", "type", "parent", "depends", "kind", "priority", "control", "spec", "status"]
+    order = ["id", "title", "type", "parent", "depends", "kind", "priority", "control", "spec", "resolves", "result", "status"]
     head = [f"{key}: {fields[key]}" for key in order if fields.get(key)]
     return "---\n" + "\n".join(head) + "\n---\n\n" + body.strip("\n") + "\n"
 
@@ -342,7 +390,8 @@ def cmd_new(args):
     status = args.status if args.status else (None if args.type == "эпик" else "идея")
     depends = "[" + ", ".join(p.strip() for p in args.depends.split(",") if p.strip()) + "]" if args.depends else ""
     fields = {"id": ident, "title": args.title, "type": args.type, "parent": args.parent, "depends": depends,
-              "kind": args.kind, "priority": args.priority, "control": args.control, "status": status}
+              "kind": args.kind, "priority": args.priority, "control": args.control, "status": status,
+              "resolves": args.resolves, "result": args.result}
     names = SECTIONS.get(args.type, ["Описание"])
     body = args.body if args.body else "\n\n".join(f"## {name}\n\nне определено" for name in names)
     path = ROOT / "work" / f"{ident}-{args.slug}.md"
@@ -389,7 +438,10 @@ def cmd_link(args):
 
 
 def cmd_set(args):
-    if args.status not in STATUSES:
+    if not args.status and not args.result:
+        print("work: укажите --status или --result", file=sys.stderr)
+        return 2
+    if args.status and args.status not in STATUSES:
         print(f"work: неизвестный статус {args.status}, допустимы: {', '.join(STATUSES)}", file=sys.stderr)
         return 2
     items, _ = load_items()
@@ -398,14 +450,20 @@ def cmd_set(args):
         print(f"work: нет элемента {args.id}", file=sys.stderr)
         return 2
     derived = item.get("type") == "эпик" or (item.get("type") == "фича" and item.get("spec"))
-    if derived and args.status not in KEPT_WITH_SPEC + ("отменено",):
+    if args.result and item.get("type") not in RESULT_TYPES:
+        print("work: result допустим только у исследования, задачи, бага, инцидента и харнеса", file=sys.stderr)
+        return 2
+    if args.status and derived and args.status not in KEPT_WITH_SPEC + ("отменено",):
         print(f"work: статус {args.id} выводится из артефактов, вручную можно только отменить или заблокировать",
               file=sys.stderr)
         return 2
     fields = dict(item.fields)
-    fields["status"] = args.status
+    if args.status:
+        fields["status"] = args.status
+    if args.result:
+        fields["result"] = args.result
     item.path.write_text(render(fields, item.body), encoding="utf-8")
-    print(f"{args.id}: статус {args.status}")
+    print(f"{args.id}: обновлен")
     return 0
 
 
@@ -420,12 +478,13 @@ def main():
     new.add_argument("--type", required=True)
     new.add_argument("--title", required=True)
     new.add_argument("--slug", required=True)
-    for option in ("parent", "depends", "kind", "control", "status", "body"):
+    for option in ("parent", "depends", "kind", "control", "status", "body", "resolves", "result"):
         new.add_argument(f"--{option}", default="")
     new.add_argument("--priority", default="P2")
     setter = sub.add_parser("set")
     setter.add_argument("id")
-    setter.add_argument("--status", required=True)
+    setter.add_argument("--status", default="")
+    setter.add_argument("--result", default="")
     link = sub.add_parser("link")
     link.add_argument("id")
     link.add_argument("spec")

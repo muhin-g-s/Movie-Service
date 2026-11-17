@@ -3,7 +3,7 @@ import unittest
 
 from helpers import Repo
 
-HEAD = ["id", "title", "type", "parent", "depends", "kind", "priority", "control", "spec", "status"]
+HEAD = ["id", "title", "type", "parent", "depends", "kind", "priority", "control", "spec", "resolves", "result", "status"]
 
 
 class WorkCase(unittest.TestCase):
@@ -391,6 +391,104 @@ class TestSet(WorkCase):
 
     def test_set_unknown_item(self):
         self.assertEqual(self.work("set", "W404", "--status", "идея").returncode, 2)
+
+
+class TestResultAndResolves(WorkCase):
+    REGISTRY = "docs/decisions/README.md"
+
+    def drop_topic(self, topic):
+        lines = self.repo.read(self.REGISTRY).split("\n")
+        kept = [line for line in lines if not line.startswith(f"| {topic} |")]
+        self.assertNotEqual(lines, kept, f"в реестре нет темы {topic}")
+        self.repo.write(self.REGISTRY, "\n".join(kept))
+
+    def research(self, ident="W001", **fields):
+        self.put(ident, "r", type="исследование", kind=None, control=None, **fields)
+
+    def test_result_is_not_allowed_for_a_feature(self):
+        self.put("W001", "a", result="docs/README.md")
+        self.detected("result допустим только")
+
+    def test_done_research_needs_result(self):
+        self.research(status="готово")
+        self.detected("у готового исследования нужен result")
+
+    def test_done_item_with_missing_result_file(self):
+        self.research(status="готово", result="docs/decisions/9999-none.md")
+        self.detected("файл result не найден")
+
+    def test_done_item_with_existing_result_is_clean(self):
+        self.research(status="готово", result="docs/decisions/0001-spec-kit-and-omc-roles.md")
+        self.clean()
+
+    def test_unfinished_item_may_name_a_future_result(self):
+        self.research(status="в работе", result="docs/decisions/9999-future.md")
+        self.clean()
+
+    def test_task_may_be_done_without_result(self):
+        self.put("W001", "a", type="задача", kind=None, control=None, status="готово")
+        self.clean()
+
+    def test_unknown_topic_while_unfinished(self):
+        self.research(status="в работе", resolves="нет такой темы")
+        self.detected("строки нет в реестре отложенных решений")
+
+    def test_known_topic_while_unfinished_is_clean(self):
+        self.research(status="в работе", resolves="Frontend")
+        self.clean()
+
+    def test_done_item_must_remove_its_topic_from_registry(self):
+        self.research(status="готово", resolves="Frontend", result="docs/decisions/0001-spec-kit-and-omc-roles.md")
+        self.detected("строка осталась в реестре отложенных решений")
+
+    def test_done_item_with_topic_removed_is_clean(self):
+        self.drop_topic("Frontend")
+        self.research(status="готово", resolves="Frontend", result="docs/decisions/0001-spec-kit-and-omc-roles.md")
+        self.clean()
+
+    def test_several_topics_are_separated_by_semicolon(self):
+        self.research(status="в работе", resolves="Frontend; Docker, деплой, окружения")
+        self.clean()
+        self.research(status="в работе", resolves="Frontend; нет такой")
+        self.detected("нет такой")
+
+    def test_cancelled_item_is_not_checked_against_registry(self):
+        self.research(status="отменено", resolves="нет такой темы")
+        self.clean()
+
+    def test_derived_done_feature_must_remove_its_topic(self):
+        self.spec(plan=True, tasks="- [x] T001 Тест\n")
+        self.put("W001", "a", spec="specs/001-demo", status=None, resolves="Frontend")
+        self.detected("строка осталась в реестре отложенных решений")
+
+    def test_new_writes_result_and_resolves(self):
+        result = self.work("new", "--type", "исследование", "--title", "R", "--slug", "r", "--resolves", "Frontend",
+                           "--result", "docs/decisions/9999-future.md")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        text = self.repo.read("work/W001-r.md")
+        self.assertIn("resolves: Frontend", text)
+        self.assertIn("result: docs/decisions/9999-future.md", text)
+
+    def test_new_rejects_unknown_topic(self):
+        result = self.work("new", "--type", "исследование", "--title", "R", "--slug", "r", "--resolves", "выдумка")
+        self.assertEqual(result.returncode, 2)
+
+    def test_set_result_and_status_together(self):
+        self.research(status="в работе")
+        result = self.work("set", "W001", "--result", "docs/decisions/0001-spec-kit-and-omc-roles.md",
+                           "--status", "готово")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.clean()
+
+    def test_set_needs_status_or_result(self):
+        self.research(status="в работе")
+        self.assertEqual(self.work("set", "W001").returncode, 2)
+
+    def test_show_prints_result_and_resolves(self):
+        self.research(status="в работе", resolves="Frontend", result="docs/decisions/9999-future.md")
+        out = self.work("show", "W001").stdout
+        self.assertIn("решает: Frontend", out)
+        self.assertIn("результат: docs/decisions/9999-future.md", out)
 
 
 class TestCli(WorkCase):
