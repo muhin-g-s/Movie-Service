@@ -1,0 +1,23 @@
+{
+  "description": "Знакомство: harness-guide рассказывает о харнесе, берет состояние командами и ничего не меняет",
+  "prompt": "Используй скилл harness-guide. Я впервые открыл репозиторий: расскажи коротко, как здесь строится работа и какой скилл вызывать первым.",
+  "graders": [
+    {
+      "type": "no_changes_matching",
+      "glob": "*"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "speckit|spec kit"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "/work|epic-new"
+    },
+    {
+      "type": "tool_used",
+      "name": "Bash",
+      "input_regex": "tools/(work|stage)\\.py"
+    }
+  ]
+}

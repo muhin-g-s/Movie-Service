@@ -33,7 +33,7 @@
 | отложенные решения | [реестр](decisions/README.md#отложенные-решения) |
 | окружение разработки, команды | [development](development/README.md) |
 | конфигурация окружений, деплой, миграции, мониторинг | [operations](operations/README.md) |
-| назначение проекта, вход | [README.md](../README.md) |
+| назначение проекта, вход, первичная настройка клона и быстрый старт харнеса | [README.md](../README.md) |
 | правила ведения документации | этот файл |
 | язык текстов и кода, переходный режим, разрешенные AI-зависимости | [конституция](../.specify/memory/constitution.md) |
 | проверка документации, хуки, настройки Claude Code | [reference.md](harness/reference.md#автоматизация-ai-среды), сами файлы: `.claude/settings.json`, `.specify/extensions.yml`, `.githooks/`, `tools/` |

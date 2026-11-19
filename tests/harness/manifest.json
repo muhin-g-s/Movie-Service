@@ -40,6 +40,7 @@
     ".claude/skills/docs-sync",
     ".claude/skills/epic-new",
     ".claude/skills/harness-eval",
+    ".claude/skills/harness-guide",
     ".claude/skills/harvest",
     ".claude/skills/hot-zones",
     ".claude/skills/stage",

@@ -68,6 +68,7 @@
 | `.claude/skills/work` | трекер работы | пользователь | `tools/work.py` |
 | `.claude/skills/hot-zones` | реестр зон, спецификация и план фичи | хук Spec Kit перед планом, пользователь | инструмент AskUserQuestion, `tools/docs-lint.py` |
 | `.claude/skills/harness-eval` | сценарии, раннер | пользователь | `tools/harness-eval.py`, `tools/docs-lint.py`, тесты |
+| `.claude/skills/harness-guide` | документация харнеса, трекер работы, этапы | пользователь | `tools/stage.py`, `tools/work.py`, только чтение |
 
 ### Скрипты
 
@@ -146,6 +147,7 @@ flowchart TD
     HZD["docs/architecture/hot-zones.md<br/>реестр зон"]
     WF[".specify/workflows/feature-chain/workflow.yml<br/>цепочка фичи без диалога"]
     BRK["docs/harness/bricks.md<br/>кирпичики и уровни контроля"]
+    HG[".claude/skills/harness-guide<br/>знакомство с харнесом"]
 
     C ==> A ==> CL
     C ==> CR
@@ -223,6 +225,11 @@ flowchart TD
     LINT -->|проверяет каталог| BRK
     LINT -->|сверяет цепочку с каталогом| WF
     TST -->|проверяет| CHK
+    HG -.-> A
+    HG -.-> D
+    HG -->|читает этапы| STG
+    HG -->|читает доску| WK
+    TST -->|проверяет| HG
 ```
 
 - Жирная стрелка `A ==> B`: B опирается на A и не может ему противоречить.
