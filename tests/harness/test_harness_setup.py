@@ -14,7 +14,7 @@ from helpers import ROOT, Repo
 
 SCRIPT = ROOT / "tools" / "harness-setup.py"
 SKILL = ROOT / ".claude/skills/harness-setup/SKILL.md"
-TOOLS = ("git", "bash", "diff", "patch", "python3", "claude", "specify", "uv")
+TOOLS = ("git", "bash", "diff", "patch", "make", "python3", "claude", "specify", "uv")
 CLAUDE_STUB = """#!/bin/sh
 if [ "$1 $2" = "plugin list" ]; then
   echo '[{"id": "oh-my-claudecode@omc", "version": "4.13.7", "enabled": __ENABLED__}]'
@@ -70,19 +70,20 @@ class TestCheck(unittest.TestCase):
         self.assertNotIn("[НЕТ]", done.stdout)
 
     def test_missing_tools_print_install_commands_for_os(self):
-        for name in ("python3", "git"):
+        for name in ("python3", "git", "make"):
             (self.stubs.dir / name).unlink()
         done = self.check(self.stubs.path())
         self.assertEqual(done.returncode, 1)
         self.assertIn("не хватает обязательного", done.stdout)
         self.assertIn("python3", done.stdout)
-        self.assertIn("sudo apt-get update && sudo apt-get install -y git python3", done.stdout)
+        self.assertIn("sudo apt-get update && sudo apt-get install -y git make python3", done.stdout)
 
     def test_windows_commands_use_git_for_windows_and_uv(self):
-        for name in ("python3", "git"):
+        for name in ("python3", "git", "make"):
             (self.stubs.dir / name).unlink()
         done = self.check(self.stubs.path(), os_name="windows-winget")
         self.assertIn("winget install --id Git.Git -e", done.stdout)
+        self.assertIn("winget install --id GnuWin32.Make -e", done.stdout)
         self.assertIn("uv python install --default", done.stdout)
 
     def test_missing_claude_is_the_hard_dependency(self):

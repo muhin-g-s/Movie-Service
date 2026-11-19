@@ -104,10 +104,10 @@ def tool_version(name):
 def install_commands(os_name, manager, missing, speckit_version):
     """Команды установки недостающего для этой ОС, в порядке выполнения."""
     commands = []
-    system_tools = [t for t in ("git", "bash", "diff", "patch", "python3") if t in missing]
+    system_tools = [t for t in ("git", "bash", "diff", "patch", "make", "python3") if t in missing]
     if system_tools:
         if os_name == "macos":
-            if any(t in system_tools for t in ("git", "diff", "patch", "bash")):
+            if any(t in system_tools for t in ("git", "diff", "patch", "bash", "make")):
                 commands.append("xcode-select --install")
             if "python3" in system_tools:
                 commands.append("brew install python" if manager == "brew" else f"{UV_UNIX} && uv python install --default")
@@ -121,6 +121,8 @@ def install_commands(os_name, manager, missing, speckit_version):
         elif os_name == "windows":
             if any(t in system_tools for t in ("git", "diff", "patch", "bash")):
                 commands.append("winget install --id Git.Git -e")
+            if "make" in system_tools:
+                commands.append("winget install --id GnuWin32.Make -e")
             if "python3" in system_tools:
                 commands.append(f"winget install --id astral-sh.uv -e" if manager == "winget" else UV_WINDOWS)
                 commands.append("uv python install --default")
@@ -153,9 +155,10 @@ def check_main():
 
     claude = tool_version("claude")
     row("claude", "Claude Code", True, bool(claude), claude or f"единственная жесткая зависимость, установка: {CLAUDE_DOCS}")
-    for name, title in (("git", "git"), ("bash", "bash"), ("diff", "diff"), ("patch", "patch")):
+    for name, title in (("git", "git"), ("bash", "bash"), ("diff", "diff"), ("patch", "patch"), ("make", "make")):
         version = tool_version(name)
-        row(name, title, True, bool(version), version or ("на Windows дает Git for Windows" if os_name == "windows" else ""))
+        hint = "" if name == "make" else "на Windows дает Git for Windows"
+        row(name, title, True, bool(version), version or (hint if os_name == "windows" else ""))
     python = shutil.which("python3")
     row("python3", "python3 по имени, его вызывают хуки", True, bool(python),
         f"{platform.python_version()} в {python}" if python else "команда python3 не найдена в PATH")
@@ -182,6 +185,7 @@ def check_main():
         for command in commands:
             print(f"  {command}")
         print("После установки плагина или смены настроек перезапустите Claude Code и повторите check.")
+        print("Если uv или specify ставились в ~/.local/bin, добавьте эту папку в PATH.")
     if "claude" in missing:
         print("Сначала установите Claude Code, без него харнес не работает.")
     if required_missing:
