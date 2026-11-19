@@ -18,6 +18,7 @@
 | bash | команды хуков и скрипты Spec Kit | |
 | Spec Kit | цикл фичи, шаблоны, скрипты, хуки | версия в `.specify/init-options.json`, интеграция установила скиллы `speckit-*` |
 | OMC | исполнение задач по ролям | плагин пользователя, не проекта, при создании документа 4.13.7 |
+| uv | установка Spec Kit CLI и Python 3 там, где их нет | необязателен, предлагает скилл `harness-setup` |
 | папка `~/.claude` | настройки пользователя, расшифровки, память, состояние напоминаний | вне репозитория |
 | скиллы и коннекторы платформы Claude | доступны как раньше | правилом об изоляции не затрагиваются, решение в [ADR 0002](../decisions/0002-ai-dependency-isolation.md) |
 
@@ -69,6 +70,7 @@
 | `.claude/skills/hot-zones` | реестр зон, спецификация и план фичи | хук Spec Kit перед планом, пользователь | инструмент AskUserQuestion, `tools/docs-lint.py` |
 | `.claude/skills/harness-eval` | сценарии, раннер | пользователь | `tools/harness-eval.py`, `tools/docs-lint.py`, тесты |
 | `.claude/skills/harness-guide` | документация харнеса, трекер работы, этапы | пользователь | `tools/stage.py`, `tools/work.py`, только чтение |
+| `.claude/skills/harness-setup` | `tools/harness-setup.py`, пакетные менеджеры ОС | пользователь в свежем клоне | `tools/harness-setup.py`, команды установки, `tools/docs-lint.py`, тесты |
 
 ### Скрипты
 
@@ -83,6 +85,7 @@
 | `tools/check-feature.py` | `.specify/feature.json`, артефакты фичи в `specs/`, версия конституции из `tools/docs-lint.py` | шаги shell цепочки `feature-chain`, пользователь | ничего |
 | `tools/harvest.py` | расшифровки и память в папке проекта, документы репозитория | скилл `harvest` | ничего |
 | `tools/harness-eval.py` | `claude`, сценарии, вопросы `cold-start` | скилл `harness-eval`, пользователь | `claude -p`, git |
+| `tools/harness-setup.py` | PATH, `claude plugin list`, git, `.specify/init-options.json` | скилл `harness-setup`, пользователь | git config, только чтение остального |
 
 ### Настройки и хуки
 
@@ -148,6 +151,8 @@ flowchart TD
     WF[".specify/workflows/feature-chain/workflow.yml<br/>цепочка фичи без диалога"]
     BRK["docs/harness/bricks.md<br/>кирпичики и уровни контроля"]
     HG[".claude/skills/harness-guide<br/>знакомство с харнесом"]
+    HSK[".claude/skills/harness-setup<br/>установка окружения"]
+    HST["tools/harness-setup.py<br/>проверка зависимостей"]
 
     C ==> A ==> CL
     C ==> CR
@@ -230,6 +235,11 @@ flowchart TD
     HG -->|читает этапы| STG
     HG -->|читает доску| WK
     TST -->|проверяет| HG
+    HSK -->|запускает| HST
+    HST -->|включает| GIT
+    HSK -->|после установки| LINT
+    HSK -->|после установки| TST
+    TST -->|проверяет| HST
 ```
 
 - Жирная стрелка `A ==> B`: B опирается на A и не может ему противоречить.

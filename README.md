@@ -21,24 +21,14 @@
 
 ## Быстрый старт харнеса
 
-Харнес работает в сессии Claude Code. Чтобы включить его в свежем клоне:
+Харнес работает в сессии Claude Code, остальное он ставит сам:
 
-1. Нужны Claude Code, Python 3, git, diff и patch. OMC ставится на уровне пользователя, команды Spec Kit лежат в репозитории как скиллы, отдельная установка Spec Kit нужна только для запуска цепочки `feature-chain`. Назначение и версии зависимостей описаны в [infrastructure.md](docs/harness/infrastructure.md#внешние-зависимости).
-2. Включите git-хук один раз:
+1. Установите [Claude Code](https://code.claude.com/docs/en/setup). Это единственная жесткая зависимость. На Windows вместе с ним поставьте Git for Windows, иначе Claude Code не использует bash и хуки проекта не работают.
+2. Откройте репозиторий в Claude Code и вызовите `/harness-setup`. Скилл определит ОС, проверит и поставит git, Python 3, diff, patch, плагин OMC и Spec Kit CLI, включит git-хук и прогонит проверку с тестами. Команды, которым нужен пароль, он покажет и попросит выполнить вас.
+3. Перезапустите Claude Code, чтобы применились настройки проекта и плагин.
+4. Вызовите `/harness-guide`: скилл расскажет, из чего состоит харнес, как строится работа и какой скилл когда вызывать. Дальше `/work` покажет, что брать следующим.
 
-```bash
-git config core.hooksPath .githooks
-```
-
-3. Перезапустите Claude Code, чтобы применились настройки проекта: хуки, запреты и отключение сторонних плагинов. В сессиях Claude Code git-хук включается автоматически при старте, если он выключен.
-4. Убедитесь, что харнес согласован и тесты проходят:
-
-```bash
-python3 tools/docs-lint.py
-python3 -m unittest discover -s tests/harness
-```
-
-5. В сессии Claude Code вызовите `/harness-guide`: скилл расскажет, из чего состоит харнес, как строится работа и какой скилл когда вызывать. Дальше `/work` покажет, что брать следующим.
+Проверить окружение без скилла можно командой `python3 tools/harness-setup.py check`, она печатает, чего не хватает и как это поставить на вашей ОС. Шаги установки вручную перечислены в файле скилла [harness-setup](.claude/skills/harness-setup/SKILL.md).
 
 ## Быстрый запуск
 
@@ -49,4 +39,5 @@ python3 -m unittest discover -s tests/harness
 - [навигация по документации](docs/README.md)
 - [конституция проекта](.specify/memory/constitution.md)
 - для ИИ-агентов: [AGENTS.md](AGENTS.md)
+- установка харнеса в свежем клоне: скилл `/harness-setup`, файл [SKILL.md](.claude/skills/harness-setup/SKILL.md)
 - быстрое знакомство с харнесом: скилл `/harness-guide`, файл [SKILL.md](.claude/skills/harness-guide/SKILL.md)

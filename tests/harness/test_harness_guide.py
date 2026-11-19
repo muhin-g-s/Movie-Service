@@ -39,7 +39,7 @@ class TestHarnessGuide(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("`/harness-guide`", readme)
         self.assertIn("## Быстрый старт харнеса", readme)
-        self.assertIn("git config core.hooksPath .githooks", readme)
+        self.assertIn("`/harness-setup`", readme)
 
 
 if __name__ == "__main__":

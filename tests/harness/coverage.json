@@ -27,6 +27,10 @@
     "tests/harness/test_harness_guide.py",
     "evals/cases/harness-guide-read-only"
   ],
+  ".claude/skills/harness-setup": [
+    "tests/harness/test_harness_setup.py",
+    "evals/cases/harness-setup-check"
+  ],
   ".claude/skills/harvest": [
     "tests/harness/test_harvest.py"
   ],
@@ -86,6 +90,9 @@
   ],
   "tools/harness-eval.py": [
     "tests/harness/test_harness_eval.py"
+  ],
+  "tools/harness-setup.py": [
+    "tests/harness/test_harness_setup.py"
   ],
   "tools/harvest.py": [
     "tests/harness/test_harvest.py"

@@ -1,0 +1,25 @@
+{
+  "description": "Установка: harness-setup запускает проверку окружения, включает git-хук, прогоняет проверку и тесты, файлы репозитория не меняет",
+  "prompt": "Используй скилл harness-setup. Я только что клонировал репозиторий, настрой окружение харнеса.",
+  "slow": true,
+  "graders": [
+    {
+      "type": "tool_used",
+      "name": "Bash",
+      "input_regex": "harness-setup\\.py check"
+    },
+    {
+      "type": "tool_used",
+      "name": "Bash",
+      "input_regex": "harness-setup\\.py hooks|docs-lint\\.py"
+    },
+    {
+      "type": "no_changes_matching",
+      "glob": "*"
+    },
+    {
+      "type": "regex_in_result",
+      "pattern": "перезапуст"
+    }
+  ]
+}
